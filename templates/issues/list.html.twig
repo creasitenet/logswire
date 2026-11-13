@@ -1,0 +1,75 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+
+{% set issues_hx_attrs %}
+    hx-get="{{ issues_list_url }}"
+    hx-target="#issues-results"
+    hx-swap="outerHTML"
+    hx-push-url="true"
+    hx-include="#issues-filters"
+{% endset %}
+
+{% block body %}
+<section class="page">
+    <header class="page-header">
+        <h1>Issues</h1>
+    </header>
+
+    <form method="get"
+          class="filters"
+          id="issues-filters"
+          action="{{ issues_list_url }}">
+        <input type="search" name="q" value="{{ filters.q ?? '' }}" placeholder="Search title, culprit, fingerprint…" class="filter-input" autocomplete="off" aria-label="Search issues"
+               {{ issues_hx_attrs|raw }}
+               hx-trigger="input changed delay:450ms, search">
+        <select name="project_id" class="filter-select" aria-label="Project"
+                {{ issues_hx_attrs|raw }}
+                hx-trigger="change">
+            <option value="" {% if not filters.project_id|default('') %}selected{% endif %}>All projects</option>
+            {% for p in projects %}
+                <option value="{{ p.id }}" {% if filters.project_id|default('') == p.id %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+        </select>
+        <select name="status" class="filter-select" aria-label="Status"
+                {{ issues_hx_attrs|raw }}
+                hx-trigger="change">
+            <option value="all"        {% if filters.status is defined and filters.status == 'all' %}selected{% endif %}>All statuses</option>
+            <option value="unresolved" {% if filters.status == 'unresolved' %}selected{% endif %}>Unresolved</option>
+            <option value="resolved"   {% if filters.status == 'resolved' %}selected{% endif %}>Resolved</option>
+        </select>
+        <select name="severity" class="filter-select" aria-label="Level"
+                {{ issues_hx_attrs|raw }}
+                hx-trigger="change">
+            <option value=""      {% if not (filters.severity|default('')) %}selected{% endif %}>Any level</option>
+            <option value="fatal" {% if filters.severity|default('') == 'fatal' %}selected{% endif %}>Fatal</option>
+            <option value="error" {% if filters.severity|default('') == 'error' %}selected{% endif %}>Error</option>
+            <option value="warn"  {% if filters.severity|default('') == 'warn' %}selected{% endif %}>Warning</option>
+            <option value="info"  {% if filters.severity|default('') == 'info' %}selected{% endif %}>Info</option>
+            <option value="debug" {% if filters.severity|default('') == 'debug' %}selected{% endif %}>Debug</option>
+        </select>
+        <input type="text" name="environment" value="{{ filters.environment ?? '' }}" placeholder="Environment" class="filter-input" autocomplete="off" aria-label="Environment"
+               {{ issues_hx_attrs|raw }}
+               hx-trigger="input changed delay:500ms">
+        <input type="text" name="release" value="{{ filters.release ?? '' }}" placeholder="Release" class="filter-input" autocomplete="off" aria-label="Release"
+               {{ issues_hx_attrs|raw }}
+               hx-trigger="input changed delay:500ms">
+        <input type="date" name="since" value="{{ filters.since is defined and filters.since ? filters.since|slice(0, 10) : '' }}"
+               class="filter-input" aria-label="Last seen since (UTC)"
+               {{ issues_hx_attrs|raw }}
+               hx-trigger="change">
+        <input type="date" name="until" value="{{ filters.until is defined and filters.until ? filters.until|slice(0, 10) : '' }}"
+               class="filter-input" aria-label="Last seen until (UTC)"
+               {{ issues_hx_attrs|raw }}
+               hx-trigger="change">
+        <input type="hidden" name="sort" value="{{ filters.sort|default('') }}">
+        <input type="hidden" name="sort_dir" value="{{ filters.sort_dir|default('desc') }}">
+        <input type="hidden" name="page" value="1">
+        <noscript><button type="submit" class="btn">Apply filters</button></noscript>
+        {% include 'issues/_clear_filters_slot.html.twig' %}
+    </form>
+
+    {% include 'issues/_results.html.twig' %}
+</section>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% import 'macros/csrf.html.twig' as csrf %}
+<div class="page-header-actions" id="issue-actions">
+    {% if flash is defined %}
+        <p class="flash flash-{{ flash[0] }}">{{ flash[1] }}</p>
+    {% endif %}
+    {% if issue.status == 'unresolved' %}
+        <form method="post" action="{{ path('issues_resolve', {id: issue.id}) }}"
+              hx-post="{{ path('issues_resolve', {id: issue.id}) }}"
+              hx-target="#issue-actions"
+              hx-swap="outerHTML">
+            {{ csrf.input('issue_action') }}
+            <button type="submit" class="btn btn-primary">Mark as resolved</button>
+        </form>
+    {% else %}
+        <form method="post" action="{{ path('issues_unresolve', {id: issue.id}) }}"
+              hx-post="{{ path('issues_unresolve', {id: issue.id}) }}"
+              hx-target="#issue-actions"
+              hx-swap="outerHTML">
+            {{ csrf.input('issue_action') }}
+            <button type="submit" class="btn">Reopen</button>
+        </form>
+    {% endif %}
+</div>

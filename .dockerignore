@@ -1,0 +1,19 @@
+.git
+.gitignore
+.env
+.env.*
+var/
+vendor/
+sources/
+
+# Tests and CI have no business in the runtime image.
+tests/
+.phpunit.cache/
+phpunit.dist.xml
+.github/
+docs/
+
+*.md
+!README.md
+compose.override.yaml
+.DS_Store

@@ -1,0 +1,198 @@
+# Logswire self-hosted stack: PostgreSQL + app + background probe loop.
+#
+# Run:
+#   cp .env.example .env
+#   docker compose up -d --build
+#   docker compose exec logswire bin/console app:owner:create <username>
+#
+# Then point any Sentry SDK DSN at http://<host>:8080/<slug> (host port = APP_HTTP_PORT).
+
+name: logswire
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: logswire-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-logswire}
+      POSTGRES_USER: ${POSTGRES_USER:-logswire}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-logswire}
+    volumes:
+      - logswire-pgdata:/var/lib/postgresql/data
+    ports:
+      # Localhost only: used by `composer test-pg` and psql, never exposed publicly.
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5433}:5432"
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-logswire} -d ${POSTGRES_DB:-logswire}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    # Internal only (hostname `postgres` on logswire-net). Never join the proxy network.
+    networks:
+      - logswire-net
+
+  logswire:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${LOGSWIRE_IMAGE:-logswire:prod}
+    container_name: logswire
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      # Case 1 (default): publish on the host — fine for a single stack / local try-out.
+      # Case 2 (NPM on shared Docker network): uncomment `proxy-tier` below, point NPM at
+      # `http://logswire:8080`, then remove or narrow this mapping (e.g. 127.0.0.1:8080).
+      - "${APP_HTTP_PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      APP_ENV: ${APP_ENV:-prod}
+      APP_DEBUG: ${APP_DEBUG:-0}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-logswire}:${POSTGRES_PASSWORD:-logswire}@postgres:5432/${POSTGRES_DB:-logswire}?serverVersion=16&charset=utf8
+      RETENTION_STATE_FILE: /data/.retention_last_run
+      LOCK_DSN: flock:///data/locks
+    volumes:
+      # Named volume: avoids host ./var/data owned by root/deploy user (session mkdir as www-data).
+      - logswire-runtime:/data
+      - ./var/backups:/app/var/backups
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    mem_limit: 512m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - logswire-net
+      # - proxy-tier
+
+  # Uptime checks run outside the web process so a busy app never delays probes.
+  # LOGSWIRE_ROLE tells the entrypoint to skip migrations and FrankenPHP.
+  probe:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${LOGSWIRE_IMAGE:-logswire:prod}
+    container_name: logswire-probe
+    restart: unless-stopped
+    depends_on:
+      logswire:
+        condition: service_healthy
+    command: ["php", "bin/console", "app:probe:loop", "--no-interaction"]
+    env_file:
+      - .env
+    environment:
+      APP_ENV: ${APP_ENV:-prod}
+      APP_DEBUG: ${APP_DEBUG:-0}
+      LOGSWIRE_ROLE: probe
+      DATABASE_URL: postgresql://${POSTGRES_USER:-logswire}:${POSTGRES_PASSWORD:-logswire}@postgres:5432/${POSTGRES_DB:-logswire}?serverVersion=16&charset=utf8
+      RETENTION_STATE_FILE: /data/.retention_last_run
+      LOCK_DSN: flock:///data/locks
+    volumes:
+      - logswire-runtime:/data
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    mem_limit: 256m
+    cpus: 0.5
+    healthcheck:
+      # FrankenPHP's inherited healthcheck probes Caddy (:2019), which does not
+      # run in probe mode. Watch the loop heartbeat instead.
+      test: ["CMD-SHELL", "test $$(( $$(date +%s) - $$(stat -c %Y /app/var/probe.heartbeat) )) -lt 120"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    networks:
+      - logswire-net
+
+  # Messenger + Symfony Scheduler: error/uptime retention prune, outbound alerts.
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${LOGSWIRE_IMAGE:-logswire:prod}
+    container_name: logswire-worker
+    restart: unless-stopped
+    depends_on:
+      logswire:
+        condition: service_healthy
+    command:
+      [
+        "php",
+        "bin/console",
+        "messenger:consume",
+        "scheduler_default",
+        "notifications",
+        "maintenance",
+        "--time-limit=3600",
+        "--memory-limit=128M",
+        "--no-interaction",
+      ]
+    env_file:
+      - .env
+    environment:
+      APP_ENV: ${APP_ENV:-prod}
+      APP_DEBUG: ${APP_DEBUG:-0}
+      LOGSWIRE_ROLE: worker
+      DATABASE_URL: postgresql://${POSTGRES_USER:-logswire}:${POSTGRES_PASSWORD:-logswire}@postgres:5432/${POSTGRES_DB:-logswire}?serverVersion=16&charset=utf8
+      RETENTION_STATE_FILE: /data/.retention_last_run
+      LOCK_DSN: flock:///data/locks
+    volumes:
+      - logswire-runtime:/data
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    mem_limit: 256m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD-SHELL", "test $$(( $$(date +%s) - $$(stat -c %Y /app/var/worker.heartbeat) )) -lt 180"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+    networks:
+      - logswire-net
+
+networks:
+  logswire-net:
+    driver: bridge
+  # Case 2: uncomment so a reverse proxy (NPM, Traefik, …) on the same external
+  # network can reach service hostname `logswire` (container_name below).
+  # Create once on the host if needed: docker network create proxy-tier
+  # Other installs may use another name — set `name:` accordingly.
+  # proxy-tier:
+  #   external: true
+
+volumes:
+  logswire-pgdata:
+  logswire-runtime:

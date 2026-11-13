@@ -1,0 +1,8 @@
+{# issues_list_url required; filters_active bool; oob bool optional #}
+<span id="issues-clear-slot"
+      class="filters-clear-slot"
+      {% if oob|default(false) %}hx-swap-oob="true"{% endif %}>
+    {% if filters_active %}
+        <a class="btn filters-clear" href="{{ issues_list_url }}">Clear filters</a>
+    {% endif %}
+</span>

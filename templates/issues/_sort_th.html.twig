@@ -1,0 +1,20 @@
+{# column, label, filters (query array) #}
+{% set current_sort = filters.sort|default('last_seen') %}
+{% if current_sort is empty %}{% set current_sort = 'last_seen' %}{% endif %}
+{% set current_dir = filters.sort_dir|default('desc') %}
+{% set is_active = (current_sort == column) %}
+{% set next_dir = (is_active and current_dir == 'desc') ? 'asc' : 'desc' %}
+{% set params = filters|merge({sort: column, sort_dir: next_dir, page: 1}) %}
+<th scope="col" class="issues-sort-th{% if is_active %} is-sorted{% endif %}">
+    <a class="issues-sort-link"
+       href="{{ path('issues_list', params) }}"
+       hx-get="{{ path('issues_list', params) }}"
+       hx-target="#issues-results"
+       hx-swap="outerHTML"
+       hx-push-url="true">
+        <span>{{ label }}</span>
+        {% if is_active %}
+            <span class="issues-sort-icon" aria-hidden="true">{{ current_dir == 'asc' ? '↑' : '↓' }}</span>
+        {% endif %}
+    </a>
+</th>

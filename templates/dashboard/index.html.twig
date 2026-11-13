@@ -1,0 +1,137 @@
+{% extends 'base.html.twig' %}
+{% import 'macros/empty_state.html.twig' as empty %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block body %}
+<section class="page">
+    <header class="page-header">
+        <div>
+            <h1>Overview</h1>
+            <p class="muted small page-subtitle">Errors, uptime, and ingest — last 24 hours where noted.</p>
+        </div>
+    </header>
+
+    <div class="kpi-grid kpi-grid--overview">
+        <a class="kpi-card" href="{{ path('issues_list', {status: 'unresolved'}) }}">
+            <span class="kpi-card__label">Errors</span>
+            <span class="kpi-card__value">{{ stats.issues_open }}</span>
+            <p class="kpi-card__hint">
+                Open issues · <strong>{{ stats.issues_new_24h }}</strong> new (24 h)
+            </p>
+        </a>
+        <a class="kpi-card" href="{{ path('monitors_list') }}">
+            <span class="kpi-card__label">Uptime</span>
+            <span class="kpi-card__value">{{ stats.monitors }}</span>
+            <p class="kpi-card__hint">
+                {% if stats.monitors_down > 0 %}
+                    <span class="is-down">{{ stats.monitors_down }} down</span> · {{ stats.incidents_open }} open incident{% if stats.incidents_open != 1 %}s{% endif %}
+                {% else %}
+                    <span class="is-up">All up or paused</span> · {{ stats.incidents_open }} incident{% if stats.incidents_open != 1 %}s{% endif %}
+                {% endif %}
+            </p>
+        </a>
+        <a class="kpi-card" href="{{ path('projects_list') }}">
+            <span class="kpi-card__label">Ingest</span>
+            <span class="kpi-card__value">{{ stats.events_24h|number_format(0, '.', ' ') }}</span>
+            <p class="kpi-card__hint">
+                Events (24 h) · {{ stats.projects }} project{% if stats.projects != 1 %}s{% endif %}
+            </p>
+        </a>
+        {% if is_granted('ROLE_ADMIN') %}
+            <a class="kpi-card" href="{{ path('settings') }}">
+                <span class="kpi-card__label">Storage</span>
+                <span class="kpi-card__value kpi-card__value--sm">{{ stats.database_label }}</span>
+                <p class="kpi-card__hint">PostgreSQL · retention &amp; Telegram in Settings</p>
+            </a>
+        {% else %}
+            <div class="kpi-card" tabindex="-1">
+                <span class="kpi-card__label">Storage</span>
+                <span class="kpi-card__value kpi-card__value--sm">{{ stats.database_label }}</span>
+                <p class="kpi-card__hint">PostgreSQL database size</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="overview-grid">
+        <section class="overview-panel">
+            <header class="overview-panel-head">
+                <h2>Recent unresolved issues</h2>
+                <a class="btn btn-sm" href="{{ path('issues_list', {status: 'unresolved'}) }}">All issues</a>
+            </header>
+            {% if stats.recent_issues is empty %}
+                {{ empty.block(
+                    'No open issues',
+                    'Point a Sentry DSN at this instance or wait for the next error.',
+                    stats.projects == 0 ? 'Create a project' : 'View projects',
+                    stats.projects == 0 ? path('projects_new') : path('projects_list'),
+                    'default',
+                    false,
+                    true,
+                    'issue'
+                ) }}
+            {% else %}
+                <div class="table-wrap">
+                    <table class="issues-table overview-issues">
+                        <thead>
+                            <tr>
+                                <th>Level</th>
+                                <th>Title</th>
+                                <th>Project</th>
+                                <th>Count</th>
+                                <th>Last seen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in stats.recent_issues %}
+                                <tr>
+                                    <td><span class="badge" data-level="{{ item.level_label }}">{{ item.level_label }}</span></td>
+                                    <td><a href="{{ path('issues_get', {id: item.id}) }}">{{ item.title }}</a></td>
+                                    <td>
+                                        {% if item.project_id %}
+                                            <a href="{{ path('projects_get', {id: item.project_id}) }}">{{ item.project_name }}</a>
+                                        {% else %}
+                                            <span class="muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.count }}</td>
+                                    <td>{% include '_time_utc.html.twig' with {at: item.last_seen_at} only %}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </section>
+
+        <section class="overview-panel">
+            <header class="overview-panel-head">
+                <h2>Monitors down</h2>
+                <a class="btn btn-sm" href="{{ path('monitors_list') }}">All monitors</a>
+            </header>
+            {% if stats.down_monitors is empty %}
+                {{ empty.block(
+                    'All monitors up',
+                    stats.monitors == 0 ? 'Add an HTTP monitor to track uptime here.' : 'No enabled monitor is reporting down.',
+                    stats.monitors == 0 ? 'New monitor' : null,
+                    stats.monitors == 0 ? path('monitors_new') : null,
+                    'positive',
+                    false,
+                    true,
+                    'check'
+                ) }}
+            {% else %}
+                <ul class="overview-list">
+                    {% for monitor in stats.down_monitors %}
+                        <li>
+                            <a href="{{ path('monitors_get', {id: monitor.id}) }}">{{ monitor.name }}</a>
+                            <span class="muted small overview-list-url">{{ monitor.url }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+    </div>
+</section>
+{% endblock %}

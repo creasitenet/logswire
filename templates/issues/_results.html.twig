@@ -1,0 +1,7 @@
+{% if hx_oob|default(false) %}
+    {% include 'issues/_clear_filters_slot.html.twig' with {oob: true} %}
+{% endif %}
+<div id="issues-results" class="issues-results">
+    {% include 'issues/_table.html.twig' %}
+    {% include 'issues/_pagination.html.twig' %}
+</div>

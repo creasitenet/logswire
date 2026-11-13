@@ -1,0 +1,121 @@
+{% extends 'base.html.twig' %}
+{% import 'macros/empty_state.html.twig' as empty %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block body %}
+<section class="page">
+    <header class="page-header page-header--issue">
+        <div class="page-header-body">
+            <p class="breadcrumb"><a href="{{ path('issues_list') }}">Issues</a></p>
+            <div class="issue-title-row">
+                <span class="badge" data-level="{{ issue.level_label }}">{{ issue.level_label }}</span>
+                <h1>{{ issue.title ?: issue.fingerprint }}</h1>
+            </div>
+            <p class="issue-header-meta muted">
+                {% if issue.project %}<span>{{ issue.project.name }}</span>{% endif %}
+                {% if issue.culprit %}<code class="issue-culprit">{{ issue.culprit }}</code>{% endif %}
+                <span>{{ issue.count }} occurrence{{ issue.count == 1 ? '' : 's' }}</span>
+                <span>last {% include '_time_utc.html.twig' with {at: issue.last_seen_at} only %}</span>
+                {% if issue.stack_diverged %}
+                    <span class="badge down" title="Latest stacktrace differs from the first occurrence">Stack changed</span>
+                {% endif %}
+            </p>
+        </div>
+        {% include 'issues/_actions.html.twig' %}
+    </header>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <p class="flash flash-{{ label }}">{{ message }}</p>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="issue-detail-grid">
+        <article class="issue-panel">
+            <h2>Stacktrace</h2>
+            {% if issue.exception_type or issue.exception_value or issue.message %}
+                <p class="issue-exception">
+                    {% if issue.exception_type %}<strong>{{ issue.exception_type }}</strong>{% endif %}
+                    <span>{{ issue.exception_value ?: issue.message }}</span>
+                </p>
+            {% endif %}
+            {% if issue.stacktrace %}
+                {% include 'issues/_stacktrace.html.twig' with {
+                    stacktrace: issue.stacktrace,
+                    stack_root_id: 'issue-stack',
+                    stack_toggle: true
+                } only %}
+            {% else %}
+                <p class="muted">No stacktrace on the latest occurrence.</p>
+            {% endif %}
+        </article>
+
+        <aside class="issue-detail-side">
+            <div class="issue-panel">
+                <h2>Context</h2>
+                <dl class="issue-context-dl">
+                    <div><dt>Status</dt><dd>{{ issue.status }}</dd></div>
+                    <div><dt>Environment</dt><dd>{{ issue.environment ?? '—' }}</dd></div>
+                    <div><dt>Release</dt><dd>{{ issue.release ?? '—' }}</dd></div>
+                    <div><dt>Platform</dt><dd>{{ issue.platform ?? '—' }}</dd></div>
+                    <div><dt>OS</dt><dd>{{ issue.os_name ?? '—' }}</dd></div>
+                    <div><dt>Browser</dt><dd>{{ issue.browser_name ?? '—' }}</dd></div>
+                    {% if issue.server_name %}
+                        <div><dt>Server</dt><dd>{{ issue.server_name }}</dd></div>
+                    {% endif %}
+                    {% if issue.request_url or issue.request_method %}
+                        <div><dt>Request</dt><dd>
+                            {% if issue.request_method %}<code>{{ issue.request_method }}</code> {% endif %}{{ issue.request_url ?? '' }}
+                        </dd></div>
+                    {% endif %}
+                    <div><dt>Client IP</dt><dd>{{ issue.client_ip ?? '—' }}</dd></div>
+                    <div><dt>User agent</dt><dd class="issue-ua" title="{{ issue.user_agent ?? '' }}">{{ issue.user_agent ?? '—' }}</dd></div>
+                    <div><dt>First seen</dt><dd>{% include '_time_utc.html.twig' with {at: issue.first_seen_at} only %}</dd></div>
+                    <div><dt>Last seen</dt><dd>{% include '_time_utc.html.twig' with {at: issue.last_seen_at} only %}</dd></div>
+                </dl>
+            </div>
+
+            {% if issue.tags|length > 0 %}
+                <div class="issue-panel">
+                    <h2>Tags</h2>
+                    <ul class="tag-list tag-list--detail">
+                        {% for k, v in issue.tags %}
+                            <li><code>{{ k }}</code> {{ v }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <div class="issue-panel">
+                <h2>Recent occurrences</h2>
+                {% if issue.occurrences is empty %}
+                    {{ empty.block('No occurrences stored', null, null, null, 'default', true, true, 'issue') }}
+                {% else %}
+                    <ul class="occurrence-history">
+                        {% for occ in issue.occurrences %}
+                            <li class="occurrence-history-row">
+                                <span class="occurrence-time">{% include '_time_utc.html.twig' with {at: occ.received_at} only %}</span>
+                                <div class="occurrence-history-detail">
+                                    <span class="muted">{{ occ.environment ?? '—' }}{% if occ.release %} · <code>{{ occ.release }}</code>{% endif %}</span>
+                                    {% if occ.client_ip or occ.user_agent or occ.browser_name %}
+                                        <span class="occurrence-history-client muted small">
+                                            {% if occ.client_ip %}<span title="Client IP">{{ occ.client_ip }}</span>{% endif %}
+                                            {% if occ.client_ip and (occ.user_agent or occ.browser_name) %} · {% endif %}
+                                            {% set ua = occ.user_agent ?? occ.browser_name %}
+                                            {% if ua %}
+                                                <span class="issue-ua" title="{{ occ.user_agent ?? occ.browser_name }}">{{ ua|length > 56 ? ua|slice(0, 53) ~ '…' : ua }}</span>
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </aside>
+    </div>
+</section>
+{% endblock %}

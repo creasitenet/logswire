@@ -1,0 +1,33 @@
+
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+# Runtime state only. Keep the two empty dirs Compose bind-mounts so it never
+# creates them root-owned on a fresh clone.
+/var/*
+!/var/data/
+!/var/backups/
+/var/data/*
+!/var/data/.gitkeep
+/var/backups/*
+!/var/backups/.gitkeep
+/vendor/
+###< symfony/framework-bundle ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
+
+.env
+.env.*
+!.env.example
+!.env.dev
+!.env.test
+.DS_Store
+.idea/
+.vscode/
+compose.override.yaml

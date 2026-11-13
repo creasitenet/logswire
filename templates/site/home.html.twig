@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+{% import 'macros/csrf.html.twig' as csrf %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block body %}
+<section class="page auth-split">
+    <div class="auth-pitch">
+        <h1>logswire<span>.</span></h1>
+        <p class="lead">
+            Self-hosted Sentry-compatible errors and HTTP uptime monitors.
+            Groups exceptions into issues, probes your URLs, notifies you on Telegram.
+        </p>
+        <ul class="muted small">
+            <li>PostgreSQL in Compose — no Redis, no Elasticsearch, no ClickHouse</li>
+            <li>App + probe containers, your data on your host</li>
+        </ul>
+    </div>
+
+    <div class="auth-panel">
+        {% if error %}
+            <p class="flash flash-error" role="alert">
+                {{ error.messageKey|trans(error.messageData, 'security') }}
+            </p>
+        {% endif %}
+
+        <form method="post" action="{{ path('app_login') }}" class="auth-form">
+            <label class="field">
+                <span class="field-label">Username</span>
+                <input
+                    type="text"
+                    name="_username"
+                    value="{{ last_username }}"
+                    required
+                    autofocus
+                    autocomplete="username"
+                    placeholder="admin"
+                >
+            </label>
+            <label class="field">
+                <span class="field-label">Password</span>
+                <input
+                    type="password"
+                    name="_password"
+                    required
+                    autocomplete="current-password"
+                    placeholder="••••••••"
+                >
+            </label>
+            {{ csrf.input('authenticate') }}
+            <button type="submit" class="btn btn-primary">Sign in</button>
+        </form>
+
+        <p class="muted small">
+            Need an account? Ask your administrator to run <code>docker exec -it &lt;container&gt; bin/console app:owner:create</code>.
+        </p>
+    </div>
+</section>
+{% endblock %}

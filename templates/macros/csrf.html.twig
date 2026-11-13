@@ -1,0 +1,4 @@
+{# Matches App\Controller\CsrfGuardTrait token ids (issue_action, project_action, …). #}
+{% macro input(token_id) %}
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token(token_id) }}">
+{% endmacro %}

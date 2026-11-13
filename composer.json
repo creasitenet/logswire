@@ -1,0 +1,117 @@
+{
+    "name": "logswire/logswire",
+    "description": "Self-hosted Sentry-compatible error tracker.",
+    "type": "project",
+    "license": "MIT",
+    "homepage": "https://github.com/creasitenet/logswire",
+    "keywords": [
+        "sentry",
+        "error-tracking",
+        "self-hosted",
+        "symfony",
+        "observability",
+        "uptime"
+    ],
+    "support": {
+        "issues": "https://github.com/creasitenet/logswire/issues",
+        "source": "https://github.com/creasitenet/logswire"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=8.5",
+        "ext-ctype": "*",
+        "ext-iconv": "*",
+        "doctrine/doctrine-bundle": "^3.3",
+        "doctrine/doctrine-migrations-bundle": "^4.0",
+        "doctrine/orm": "^3.7",
+        "dragonmantank/cron-expression": "^3.6",
+        "symfony/asset": "^8.1",
+        "symfony/console": "^8.1",
+        "symfony/doctrine-messenger": "^8.1",
+        "symfony/dotenv": "^8.1",
+        "symfony/flex": "^2",
+        "symfony/framework-bundle": "^8.1",
+        "symfony/http-client": "^8.1",
+        "symfony/lock": "^8.1",
+        "symfony/messenger": "^8.1",
+        "symfony/password-hasher": "^8.1",
+        "symfony/process": "^8.1",
+        "symfony/rate-limiter": "^8.1",
+        "symfony/runtime": "^8.1",
+        "symfony/scheduler": "^8.1",
+        "symfony/security-bundle": "^8.1",
+        "symfony/twig-bundle": "^8.1",
+        "symfony/uid": "^8.1",
+        "symfony/yaml": "^8.1",
+        "twig/twig": "^3.28"
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true,
+            "symfony/flex": true,
+            "symfony/runtime": true
+        },
+        "bump-after-update": true,
+        "platform": {
+            "php": "8.5.12"
+        },
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Tests\\": "tests/"
+        }
+    },
+    "replace": {
+        "symfony/polyfill-ctype": "*",
+        "symfony/polyfill-iconv": "*",
+        "symfony/polyfill-php72": "*",
+        "symfony/polyfill-php83": "*",
+        "symfony/polyfill-php84": "*"
+    },
+    "scripts": {
+        "auto-scripts": {
+            "cache:clear": "symfony-cmd",
+            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+        },
+        "post-install-cmd": [
+            "@php scripts/ensure-env.php",
+            "@auto-scripts"
+        ],
+        "post-update-cmd": [
+            "@php scripts/ensure-env.php",
+            "@auto-scripts"
+        ],
+        "test": "phpunit",
+        "test-pg": "LOGSWIRE_PG_DSN=${LOGSWIRE_PG_DSN:-postgresql://logswire:logswire@127.0.0.1:5433/logswire} phpunit --filter MetricBucketWriterPostgresTest",
+        "phpstan": "phpstan analyse --memory-limit=512M",
+        "qa": [
+            "@phpstan",
+            "@test"
+        ]
+    },
+    "conflict": {
+        "symfony/symfony": "*"
+    },
+    "extra": {
+        "symfony": {
+            "allow-contrib": false,
+            "require": "^8.1"
+        }
+    },
+    "require-dev": {
+        "dg/bypass-finals": "^1.11",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-symfony": "^2.0",
+        "phpunit/phpunit": "^13.3",
+        "symfony/browser-kit": "^8.1",
+        "symfony/css-selector": "^8.1",
+        "symfony/maker-bundle": "^1.67"
+    }
+}

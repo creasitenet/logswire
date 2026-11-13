@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Logswire{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Lightweight self-hosted error tracking, ready in one Docker container.{% endblock %}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Logswire">
+    <meta property="og:title" content="{% block og_title %}{{ block('title') }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ block('meta_description') }}{% endblock %}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="icon" href="{{ asset('favicon-96x96.png') }}" type="image/png" sizes="96x96">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
+    <meta name="theme-color" content="#081018">
+    <link rel="preload" href="{{ asset('fonts/plus-jakarta-sans.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ asset('fonts/jetbrains-mono.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ asset('css/site.css') }}?v=20261112f">
+    <script src="{{ asset('js/htmx.min.js') }}?v=2.0.4" defer></script>
+    <script src="{{ asset('js/logswire.js') }}?v=20261113" defer></script>
+    {% block head %}{% endblock %}
+</head>
+{% set current_route = app.request.attributes.get('_route') %}
+<body class="{% if app.user %}layout-app{% else %}layout-guest{% endif %}">
+{% if app.user %}
+    <div class="app-shell">
+        <aside class="app-sidebar" aria-label="Main navigation">
+            <a class="brand brand-sidebar" href="{{ path('dashboard') }}">logswire<span>.</span></a>
+            <nav class="sidebar-nav">
+                <a class="sidebar-link {{ current_route == 'dashboard' ? 'is-active' : '' }}"
+                   href="{{ path('dashboard') }}">
+                    <span class="sidebar-link-label">Overview</span>
+                </a>
+                <a class="sidebar-link {{ current_route in ['issues_list', 'issues_get'] ? 'is-active' : '' }}"
+                   href="{{ path('issues_list') }}">
+                    <span class="sidebar-link-label">Issues</span>
+                </a>
+                <a class="sidebar-link {{ current_route starts with 'monitors' ? 'is-active' : '' }}"
+                   href="{{ path('monitors_list') }}">
+                    <span class="sidebar-link-label">Monitors</span>
+                </a>
+                <a class="sidebar-link {{ current_route starts with 'projects' ? 'is-active' : '' }}"
+                   href="{{ path('projects_list') }}">
+                    <span class="sidebar-link-label">Projects</span>
+                </a>
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a class="sidebar-link {{ current_route starts with 'settings' ? 'is-active' : '' }}"
+                       href="{{ path('settings') }}">
+                        <span class="sidebar-link-label">Settings</span>
+                    </a>
+                {% endif %}
+            </nav>
+            <div class="sidebar-foot">
+                <span class="sidebar-user">{{ app.user.userIdentifier }}</span>
+                {% import 'macros/csrf.html.twig' as csrf %}
+                <form class="sidebar-form" method="post" action="{{ path('logout') }}">
+                    {{ csrf.input('logout') }}
+                    <button type="submit" class="sidebar-link sidebar-link-quiet">Sign out</button>
+                </form>
+            </div>
+        </aside>
+        <div class="app-main">
+            <main class="app-content">
+{% else %}
+    <main class="guest-main">
+{% endif %}
+                {% block body %}{% endblock %}
+{% if app.user %}
+            </main>
+        </div>
+    </div>
+{% else %}
+    </main>
+{% endif %}
+</body>
+</html>

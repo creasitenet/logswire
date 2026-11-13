@@ -1,0 +1,22 @@
+{# monitor: { id, enabled } #}
+{% import 'macros/csrf.html.twig' as csrf %}
+<form method="post"
+      action="{{ path('monitors_toggle', {id: monitor.id}) }}"
+      class="ingest-toggle-form ingest-toggle-form--compact">
+    {{ csrf.input('monitor_action') }}
+    <input type="hidden" name="enabled" value="0">
+    <label class="switch switch--compact" title="{% if monitor.enabled %}Pause checks{% else %}Resume checks{% endif %}">
+        <input type="checkbox"
+               name="enabled"
+               value="1"
+               class="switch-input"
+               {% if monitor.enabled %}checked{% endif %}
+               data-autosubmit>
+        <span class="switch-track" aria-hidden="true"></span>
+        <span class="switch-status" aria-live="polite">
+            <span class="switch-status-on">On</span>
+            <span class="switch-status-off">Off</span>
+        </span>
+    </label>
+    <noscript><button type="submit" class="btn">Save</button></noscript>
+</form>

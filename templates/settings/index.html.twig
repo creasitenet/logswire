@@ -1,0 +1,131 @@
+{% extends 'base.html.twig' %}
+{% import 'macros/csrf.html.twig' as csrf %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block body %}
+<section class="page">
+    <header class="page-header">
+        <div>
+            <h1>Settings</h1>
+            <p class="muted small page-subtitle">Admin only — Telegram, retention policy, disk planning. Counts: <a href="{{ path('dashboard') }}">Overview</a>.</p>
+        </div>
+    </header>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <p class="flash flash-{{ label }}">{{ message }}</p>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="settings-layout">
+        <article class="settings-panel settings-panel--data">
+            <h2>Retention &amp; capacity</h2>
+            <p class="muted settings-panel-lead">
+                Errors are pruned automatically by the worker (throttled to about once per day).
+                Database size on Overview is a single-query snapshot; figures below scan event payloads.
+            </p>
+
+            <div class="settings-split">
+                <section class="settings-subpanel">
+                    <h3 class="settings-subtitle">Retention</h3>
+                    <dl class="settings-dl">
+                        <dt>Status</dt>
+                        <dd>
+                            {% if retention.enabled %}
+                                <span class="badge ok">automatic</span>
+                            {% else %}
+                                <span class="badge down">disabled</span>
+                            {% endif %}
+                        </dd>
+                        <dt>Window</dt>
+                        <dd><code>{{ retention.days }} days</code> (<code>LOGSWIRE_RETENTION_DAYS</code> in <code>.env</code>)</dd>
+                        <dt>Last run (UTC)</dt>
+                        <dd>
+                            <code>
+                            {% if retention.last_run_at %}
+                                {% include '_time_utc.html.twig' with {at: retention.last_run_at} only %}
+                            {% else %}
+                                <span class="muted">Not yet (runs from the worker)</span>
+                            {% endif %}
+                            </code>
+                        </dd>
+                    </dl>
+                    <p class="muted small">
+                        Set <code>LOGSWIRE_RETENTION_DAYS=0</code> to disable; restart after changes.
+                        Force a full prune: <code>bin/console app:retention:cleanup</code>.
+                    </p>
+                </section>
+
+                <section class="settings-subpanel">
+                    <h3 class="settings-subtitle">Payload planning</h3>
+                    <dl class="settings-dl">
+                        <dt>Database</dt>
+                        <dd><code>{{ capacity.database_label }}</code></dd>
+                        <dt>Payload sum</dt>
+                        <dd><code>{{ capacity.payload_label }}</code></dd>
+                        <dt>Avg / occurrence</dt>
+                        <dd>
+                            {% if capacity.avg_payload_label %}
+                                <code>{{ capacity.avg_payload_label }}</code>
+                            {% else %}
+                                <span class="muted">—</span>
+                            {% endif %}
+                        </dd>
+                        <dt>Last 7 days</dt>
+                        <dd>
+                            <code>{{ capacity.occurrences_last_7_days|number_format(0, '.', ' ') }}</code>
+                            {% if capacity.occurrences_per_day_estimate %}
+                                <span class="muted">(~{{ capacity.occurrences_per_day_estimate|number_format(1, '.', ' ') }}/d)</span>
+                            {% endif %}
+                        </dd>
+                        {% if capacity.projected_row_count and capacity.projected_size_label %}
+                            <dt>At {{ retention.days }}d †</dt>
+                            <dd>
+                                ~<code>{{ capacity.projected_row_count|number_format(0, '.', ' ') }}</code> rows,
+                                ~<code>{{ capacity.projected_size_label }}</code> payloads
+                            </dd>
+                        {% endif %}
+                    </dl>
+                    <p class="muted small settings-footnote">† Steady-state estimate from recent ingest. See README.</p>
+                </section>
+            </div>
+        </article>
+
+        <article class="settings-panel settings-panel--telegram">
+            <h2>Telegram alerts</h2>
+            <p class="muted settings-panel-lead">
+                One message on the <strong>first</strong> occurrence of a new error/fatal issue per project,
+                and on monitor DOWN / RECOVERED transitions.
+            </p>
+
+            <dl class="settings-dl">
+                <dt>Status</dt>
+                <dd>
+                    {% if telegram.configured %}
+                        <span class="badge ok">configured</span>
+                    {% else %}
+                        <span class="badge down">not configured</span>
+                    {% endif %}
+                </dd>
+                <dt>Bot token</dt>
+                <dd><code>{{ telegram.token_mask }}</code></dd>
+                <dt>Chat ID</dt>
+                <dd><code>{{ telegram.chat_mask }}</code></dd>
+            </dl>
+
+            <p class="muted small">
+                <code>LOGSWIRE_TELEGRAM_BOT_TOKEN</code> and <code>LOGSWIRE_TELEGRAM_CHAT_ID</code> in <code>.env</code>, then restart.
+            </p>
+
+            <form method="post" action="{{ path('settings_telegram_test') }}" class="inline-form settings-form">
+                {{ csrf.input('settings_action') }}
+                <button type="submit" class="btn" {% if not telegram.configured %}disabled{% endif %}>
+                    Send test message
+                </button>
+            </form>
+        </article>
+    </div>
+</section>
+{% endblock %}

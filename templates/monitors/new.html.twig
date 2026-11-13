@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+{% import 'macros/csrf.html.twig' as csrf %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block body %}
+<section class="page">
+    <header class="page-header">
+        <h1>New monitor</h1>
+    </header>
+
+    {% if error %}
+        <p class="flash flash-error">{{ error }}</p>
+    {% endif %}
+
+    <div class="form-panel">
+    <form method="post" action="{{ path('monitors_new') }}" class="form">
+        {% include 'monitors/_form.html.twig' with {form: form} only %}
+        {{ csrf.input('monitor_action') }}
+        <div class="form-actions">
+            <a href="{{ path('monitors_list') }}" class="btn">Cancel</a>
+            <button type="submit" class="btn btn-primary">Create</button>
+        </div>
+    </form>
+    </div>
+</section>
+{% endblock %}

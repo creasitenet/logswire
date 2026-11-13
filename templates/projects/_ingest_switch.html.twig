@@ -1,0 +1,39 @@
+{# project: { id, active }; compact: bool; embed: bool (inside parent form, no auto-submit) #}
+{% import 'macros/csrf.html.twig' as csrf %}
+{% set compact = compact|default(false) %}
+{% set embed = embed|default(false) %}
+
+{% if not embed %}
+<form method="post"
+      action="{{ path('projects_set_ingest', {id: project.id}) }}"
+      class="ingest-toggle-form{% if compact %} ingest-toggle-form--compact{% endif %}">
+    {{ csrf.input('project_action') }}
+    <input type="hidden" name="active" value="0">
+{% endif %}
+
+<label class="switch{% if compact %} switch--compact{% endif %}"
+       title="{% if project.active %}Pause ingest{% else %}Resume ingest{% endif %}">
+    <input type="checkbox"
+           name="active"
+           value="1"
+           class="switch-input"
+           {% if project.active %}checked{% endif %}
+           {% if not embed %}data-autosubmit{% endif %}>
+    <span class="switch-track" aria-hidden="true"></span>
+    {% if compact %}
+        <span class="switch-status" aria-live="polite">
+            <span class="switch-status-on">On</span>
+            <span class="switch-status-off">Off</span>
+        </span>
+    {% else %}
+        <span class="switch-copy">
+            <span class="switch-copy-title">Accept new events</span>
+            <span class="switch-copy-hint muted small">API returns 403 while off; existing issues remain.</span>
+        </span>
+    {% endif %}
+</label>
+
+{% if not embed %}
+    <noscript><button type="submit" class="btn">Save</button></noscript>
+</form>
+{% endif %}

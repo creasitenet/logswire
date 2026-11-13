@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+{% import 'macros/csrf.html.twig' as csrf %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block body %}
+<section class="page">
+    <header class="page-header">
+        <h1>New project</h1>
+    </header>
+
+    {% if error %}
+        <p class="flash flash-error">{{ error }}</p>
+    {% endif %}
+
+    <div class="form-panel">
+    <form method="post" action="{{ path('projects_new') }}" class="form">
+        <label class="field">
+            <span class="field-label">Name</span>
+            <input type="text" name="name" value="{{ name ?? '' }}" required autofocus maxlength="120">
+            <span class="field-hint">A friendly name, e.g. <code>api-prod</code> or <code>web-frontend</code>.</span>
+        </label>
+        {{ csrf.input('project_action') }}
+        <div class="form-actions">
+            <a href="{{ path('projects_list') }}" class="btn">Cancel</a>
+            <button type="submit" class="btn btn-primary">Create</button>
+        </div>
+    </form>
+    </div>
+</section>
+{% endblock %}

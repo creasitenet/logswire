@@ -1,0 +1,76 @@
+{% extends 'base.html.twig' %}
+{% import 'macros/csrf.html.twig' as csrf %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block body %}
+<section class="page">
+    <header class="page-header">
+        <div class="page-header-body">
+            <h1>{{ project.name }}</h1>
+            <div class="meta">
+                <span><code>/{{ project.slug }}</code></span>
+                {% if project.active %}
+                    <span class="badge ok" title="SDK events are accepted on the ingest API">Ingest on</span>
+                {% else %}
+                    <span class="badge down" title="New events are rejected until you re-enable the project">Ingest off</span>
+                {% endif %}
+                <span class="muted">Created {% include '_time_utc.html.twig' with {at: project.created_at} only %}</span>
+            </div>
+        </div>
+        <div class="page-header-actions">
+            <a class="btn" href="{{ path('issues_list', {project_id: project.id}) }}">Issues</a>
+            <a class="btn" href="{{ path('projects_edit', {id: project.id}) }}">Edit</a>
+            <form method="post" action="{{ path('projects_delete', {id: project.id}) }}" class="inline-form">
+                {{ csrf.input('project_action') }}
+                <button type="submit" class="btn btn-danger"
+                        data-confirm="Delete project {{ project.name|e('js') }}? All its issues will be lost.">
+                    Delete
+                </button>
+            </form>
+        </div>
+    </header>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <p class="flash flash-{{ label }}">{{ message }}</p>
+        {% endfor %}
+    {% endfor %}
+
+    <article class="project-detail">
+        <h2>DSN</h2>
+        <div class="copy-row">
+            <pre><code id="project-dsn">{{ project.dsn }}</code></pre>
+            <button type="button" class="btn" data-copy="{{ project.dsn }}" data-copy-label="Copy DSN" data-copied-label="Copied">Copy DSN</button>
+        </div>
+        <p class="muted">Use this DSN in your Sentry-compatible SDK. Examples below.</p>
+
+        <h3>PHP</h3>
+        <pre><code>{{ project.snippet_php }}</code></pre>
+
+        <h3>Node.js</h3>
+        <pre><code>{{ project.snippet_node }}</code></pre>
+
+        <h3>Rotate DSN key</h3>
+        <p class="muted">Regenerate the public key. The old key stops accepting events immediately.</p>
+        <form method="post" action="{{ path('projects_regenerate_dsn', {id: project.id}) }}" class="inline-form">
+            {{ csrf.input('project_action') }}
+            <button type="submit" class="btn"
+                    data-confirm="Rotate DSN? All running applications will need to be updated.">
+                Regenerate DSN
+            </button>
+        </form>
+
+        <h3>Send a test event</h3>
+        <form method="post" action="{{ path('projects_test_event', {id: project.id}) }}" class="form">
+            <label class="field">
+                <span class="field-label">Optional message</span>
+                <input type="text" name="message" placeholder="Hello from Logswire">
+            </label>
+            {{ csrf.input('project_action') }}
+            <button type="submit" class="btn">Send test event</button>
+        </form>
+    </article>
+</section>
+{% endblock %}

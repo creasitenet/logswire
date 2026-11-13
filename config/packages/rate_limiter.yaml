@@ -1,0 +1,13 @@
+framework:
+    rate_limiter:
+        api_write:
+            policy: sliding_window
+            limit: 60
+            interval: '1 minute'
+        # Applied per client IP before the DSN is resolved, so unauthenticated
+        # or unknown-slug requests cannot hammer the database.
+        api_ingest_ip:
+            policy: sliding_window
+            limit: 300
+            interval: '1 minute'
+

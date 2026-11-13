@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+{% import 'macros/empty_state.html.twig' as empty %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block body %}
+<section class="page">
+    <header class="page-header">
+        <div>
+            <h1>Projects</h1>
+            <p class="muted small page-subtitle">Manage DSN keys and SDK snippets per application.</p>
+        </div>
+        <a class="btn btn-primary" href="{{ path('projects_new') }}">New project</a>
+    </header>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <p class="flash flash-{{ label }}">{{ message }}</p>
+        {% endfor %}
+    {% endfor %}
+
+    {% if projects is empty %}
+        {{ empty.block(
+            'No projects yet',
+            'Each project gets a DSN and ingest key. Connect your app with the Sentry SDK to start receiving issues.',
+            'New project',
+            path('projects_new'),
+            'default',
+            false,
+            false,
+            'project'
+        ) }}
+    {% else %}
+        <div class="table-wrap">
+        <table class="project-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Slug</th>
+                    <th>Ingest</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in projects %}
+                    <tr>
+                        <td><a href="{{ path('projects_get', {id: project.id}) }}">{{ project.name }}</a></td>
+                        <td><code>/{{ project.slug }}</code></td>
+                        <td class="project-ingest-cell">
+                            {% include 'projects/_ingest_switch.html.twig' with {project: project, compact: true} only %}
+                        </td>
+                        <td>{% include '_time_utc.html.twig' with {at: project.created_at} only %}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

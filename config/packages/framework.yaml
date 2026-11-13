@@ -1,0 +1,24 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+    session:
+        handler_id: null
+        save_path: '%kernel.project_dir%/var/sessions'
+        cookie_secure: auto
+        cookie_samesite: lax
+        cookie_httponly: true
+        name: LOGSWIRESESSID
+
+# Reverse proxy — set TRUSTED_PROXIES to the proxy IP/CIDR in prod .env
+when@prod:
+    framework:
+        session:
+            save_path: '/data/sessions'
+        trusted_proxies: '%env(TRUSTED_PROXIES)%'
+        trusted_headers: ['x-forwarded-for', 'x-forwarded-proto', 'x-forwarded-port']
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file

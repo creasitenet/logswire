@@ -1,0 +1,78 @@
+{% import 'macros/csrf.html.twig' as csrf %}
+{% import 'macros/empty_state.html.twig' as empty %}
+{% set back_url = path('issues_list', filters|merge({page: pagination.page})) %}
+{% if items is empty %}
+    {% if filters_active|default(false) %}
+        {{ empty.block(
+            'No issues match',
+            'Try widening the date range or clearing filters.',
+            'Clear filters',
+            issues_list_url,
+            'default',
+            false,
+            false,
+            'issue'
+        ) }}
+    {% else %}
+        {{ empty.block(
+            'No issues yet',
+            'Unresolved errors appear here after ingest. Configure a project DSN first.',
+            'Projects',
+            path('projects_list'),
+            'default',
+            false,
+            false,
+            'issue'
+        ) }}
+    {% endif %}
+{% else %}
+    <div class="table-wrap">
+    <table class="issues-table">
+        <thead>
+            <tr>
+                {% include 'issues/_sort_th.html.twig' with {column: 'level', label: 'Level', filters: filters} only %}
+                {% include 'issues/_sort_th.html.twig' with {column: 'title', label: 'Title', filters: filters} only %}
+                {% include 'issues/_sort_th.html.twig' with {column: 'project', label: 'Project', filters: filters} only %}
+                {% include 'issues/_sort_th.html.twig' with {column: 'status', label: 'Status', filters: filters} only %}
+                {% include 'issues/_sort_th.html.twig' with {column: 'count', label: 'Count', filters: filters} only %}
+                {% include 'issues/_sort_th.html.twig' with {column: 'last_seen', label: 'Last seen', filters: filters} only %}
+                <th class="col-actions"><span class="visually-hidden">Actions</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+                <tr>
+                    <td><span class="badge" data-level="{{ item.level_label }}">{{ item.level_label }}</span></td>
+                    <td><a href="{{ path('issues_get', {id: item.id}) }}">{{ item.title ?: item.fingerprint }}</a></td>
+                    <td>
+                        {% if item.project %}
+                            <a href="{{ path('projects_get', {id: item.project.id}) }}">{{ item.project.name }}</a>
+                        {% else %}
+                            <span class="muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.status == 'resolved' %}
+                            <span class="badge ok">resolved</span>
+                        {% else %}
+                            <span class="badge">{{ item.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.count }}</td>
+                    <td>{% include '_time_utc.html.twig' with {at: item.last_seen_at} only %}</td>
+                    <td class="col-actions">
+                        <form method="post" class="inline-form"
+                              action="{{ path(item.status == 'resolved' ? 'issues_unresolve' : 'issues_resolve', {id: item.id}) }}">
+                            {{ csrf.input('issue_action') }}
+                            <input type="hidden" name="redirect" value="{{ back_url }}">
+                            <button type="submit" class="btn btn-sm">
+                                {{ item.status == 'resolved' ? 'Reopen' : 'Resolve' }}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+{% endif %}

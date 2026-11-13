@@ -1,0 +1,31 @@
+{
+	{$CADDY_GLOBAL_OPTIONS}
+	frankenphp {
+		{$FRANKENPHP_CONFIG}
+	}
+}
+
+{$SERVER_NAME:localhost} {
+	log {
+		level {$LOG_LEVEL:WARN}
+	}
+
+	root * /app/public
+	encode zstd gzip
+
+	php_server {
+		try_files {path} index.php
+	}
+
+	@static path *.css *.js *.ico *.svg *.woff2
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	# Defense in depth (Symfony also sets these on dynamic responses)
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	file_server
+}

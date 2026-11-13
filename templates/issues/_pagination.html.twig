@@ -1,0 +1,29 @@
+<nav class="pagination" aria-label="Issues pagination">
+    <p class="pagination-summary muted">
+        {{ pagination.total }} issue{% if pagination.total != 1 %}s{% endif %}
+        {% if pagination.page_count > 1 %}
+            — page {{ pagination.page }} / {{ pagination.page_count }}
+            ({{ pagination.per_page }} per page)
+        {% endif %}
+    </p>
+    {% if pagination.page_count > 1 %}
+        <div class="pagination-links">
+            {% if pagination.page > 1 %}
+                <a class="btn"
+                   href="{{ path('issues_list', filters|merge({page: pagination.page - 1})) }}"
+                   hx-get="{{ path('issues_list', filters|merge({page: pagination.page - 1})) }}"
+                   hx-target="#issues-results"
+                   hx-swap="outerHTML"
+                   hx-push-url="true">← Previous</a>
+            {% endif %}
+            {% if pagination.page < pagination.page_count %}
+                <a class="btn"
+                   href="{{ path('issues_list', filters|merge({page: pagination.page + 1})) }}"
+                   hx-get="{{ path('issues_list', filters|merge({page: pagination.page + 1})) }}"
+                   hx-target="#issues-results"
+                   hx-swap="outerHTML"
+                   hx-push-url="true">Next →</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</nav>

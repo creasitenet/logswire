@@ -1,0 +1,9 @@
+framework:
+    router:
+        # Absolute URL generation (CLI / emails). Uses APP_PUBLIC_URL (already in apps/.env).
+        default_uri: '%env(default::APP_PUBLIC_URL)%'
+
+when@prod:
+    framework:
+        router:
+            strict_requirements: null

@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qa:
+    name: PHPStan + PHPUnit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: intl, mbstring, opcache, pdo_sqlite, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Prepare .env
+        run: cp .env.example .env
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: PHPStan
+        run: composer phpstan
+
+      - name: PHPUnit
+        run: composer test
+
+  postgres:
+    name: Postgres UPSERT
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: logswire
+          POSTGRES_USER: logswire
+          POSTGRES_PASSWORD: logswire
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U logswire -d logswire"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: intl, mbstring, opcache, pdo_pgsql, pdo_sqlite, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Prepare .env
+        run: cp .env.example .env
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Replay the bucket UPSERT on PostgreSQL
+        run: composer test-pg
+        env:
+          LOGSWIRE_PG_DSN: postgresql://logswire:logswire@127.0.0.1:5433/logswire

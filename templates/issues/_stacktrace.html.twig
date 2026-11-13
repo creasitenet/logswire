@@ -1,0 +1,31 @@
+{% if stacktrace is defined and stacktrace %}
+    {% set root_id = stack_root_id|default('stack') %}
+    {% set in_app_count = stacktrace|filter(frame => frame.in_app)|length %}
+    {% set total = stacktrace|length %}
+    {% set start_in_app_only = in_app_count > 0 and in_app_count < total %}
+    <ol id="{{ root_id }}"
+        class="stacktrace"
+        data-stack-frames
+        {% if start_in_app_only %}data-stack-in-app-only{% endif %}>
+        {% for frame in stacktrace %}
+            <li class="{% if frame.in_app %}in-app{% else %}frame-system{% endif %}">
+                <span class="stack-fn">{{ frame.function ?: '(anonymous)' }}</span>
+                <code class="stack-file">{{ frame.filename ?? frame.abs_path ?? '<internal>' }}{% if frame.lineno %}:{{ frame.lineno }}{% endif %}</code>
+            </li>
+        {% endfor %}
+    </ol>
+    {% if stack_toggle|default(false) and total > 0 and in_app_count < total %}
+        {% set hidden_n = total - in_app_count %}
+        <button type="button"
+                class="stack-frames-toggle"
+                data-stack-toggle-for="{{ root_id }}"
+                data-label-in-app="Show in-app frames only"
+                data-label-all="Show all frames ({{ hidden_n }} hidden)">
+            {% if start_in_app_only %}
+                Show all frames ({{ hidden_n }} hidden)
+            {% else %}
+                Show in-app frames only
+            {% endif %}
+        </button>
+    {% endif %}
+{% endif %}

@@ -1,0 +1,31 @@
+framework:
+    messenger:
+        failure_transport: failed
+
+        transports:
+            notifications:
+                dsn: 'doctrine://default?queue_name=notifications'
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
+                    max_delay: 30000
+            maintenance:
+                dsn: 'doctrine://default?queue_name=maintenance'
+            failed:
+                dsn: 'doctrine://default?queue_name=failed'
+            sync: 'sync://'
+
+        routing:
+            'App\Message\Notification\*': notifications
+            'App\Message\Maintenance\*': maintenance
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                notifications: 'sync://'
+                maintenance: 'sync://'
+            routing:
+                'App\Message\Notification\*': sync
+                'App\Message\Maintenance\*': sync
