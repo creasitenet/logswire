@@ -92,3 +92,8 @@ only alert channel.
 - `/healthz` no longer exposes database errors in JSON; post-login and ingest
   redirects reject off-site targets; logout is POST + CSRF; ingest is rate-limited
   and gzip bodies are bounded before decode.
+- Uptime probes **always block cloud metadata endpoints** (`169.254.169.254`,
+  `169.254.170.2`, `100.100.100.200`, `fd00:ec2::254`, `fd00:ec2::23`,
+  `metadata.google.internal`, `metadata.goog`), even when private LAN targets stay
+  allowed for homelab use. The check runs on the monitor URL and on every redirect
+  hop; redirects are now followed manually (10 hops, http(s) only).

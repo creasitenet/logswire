@@ -76,7 +76,11 @@ The `probe` service requests only URLs stored on monitors. An authenticated admi
 
 The probe does **not** re-validate on every tick (the URL is trusted once persisted). Compromise of the database or an admin account could still point probes elsewhere — same trust level as changing nginx upstreams.
 
-RFC1918 and metadata IPs are **allowed** on purpose (check your own LAN). This is not a hardened outbound SSRF firewall. Redirects are followed (up to 10 hops): choose monitor targets you trust not to redirect to `file://` or unexpected hosts.
+RFC1918 and loopback targets are **allowed** on purpose (check your own LAN). This is not a hardened outbound SSRF firewall.
+
+**Cloud metadata endpoints are always blocked**, even when private targets are allowed: `169.254.169.254` (AWS / GCP / Azure / OpenStack), `169.254.170.2` (ECS), `100.100.100.200` (Alibaba), `fd00:ec2::254` and `fd00:ec2::23` (AWS over IPv6), and the hostnames `metadata.google.internal` / `metadata.goog`. IPv4-mapped forms (`::ffff:169.254.169.254`) and hostnames that resolve to a blocked IP are caught too.
+
+Redirects are followed **manually**, up to 10 hops, `http(s)` only, and every hop is checked against that block-list **before** the request is sent (Symfony's automatic redirects are disabled with `max_redirects => 0`). A redirect to a metadata endpoint is reported as `blocked:` and does not retry.
 
 ## Sensitive event data
 
