@@ -83,4 +83,87 @@
       page.value = '1';
     }
   });
+
+  // ——— Live monitor timestamps ———
+  // Server sends absolute UTC times as the no-JS fallback; these helpers turn
+  // them into "42s ago" / "in 18s" and keep them ticking between htmx polls.
+
+  function relativePast(ts, now) {
+    var diff = Math.max(0, now - ts);
+    if (diff < 60) {
+      return Math.floor(diff) + 's ago';
+    }
+    if (diff < 3600) {
+      return Math.floor(diff / 60) + 'm ago';
+    }
+    if (diff < 86400) {
+      return Math.floor(diff / 3600) + 'h ago';
+    }
+    return Math.floor(diff / 86400) + 'd ago';
+  }
+
+  // Same buckets without the trailing "ago", for "Up for 18h".
+  function relativeSpan(ts, now) {
+    return relativePast(ts, now).replace(/ ago$/, '');
+  }
+
+  function countdown(ts, now, intervalSec) {
+    var diff = ts - now;
+    if (diff > 1) {
+      if (diff < 60) {
+        return 'in ' + Math.ceil(diff) + 's';
+      }
+      if (diff < 3600) {
+        return 'in ' + Math.ceil(diff / 60) + 'm';
+      }
+      return 'in ' + Math.ceil(diff / 3600) + 'h';
+    }
+    if (diff >= -intervalSec) {
+      return 'due…';
+    }
+    var late = -diff;
+    if (late < 60) {
+      return 'overdue ' + Math.floor(late) + 's';
+    }
+    if (late < 3600) {
+      return 'overdue ' + Math.floor(late / 60) + 'm';
+    }
+    return 'overdue ' + Math.floor(late / 3600) + 'h';
+  }
+
+  function tickLiveTimestamps() {
+    var now = Math.floor(Date.now() / 1000);
+
+    document.querySelectorAll('[data-ts-relative]').forEach(function (el) {
+      var ts = parseInt(el.getAttribute('data-ts-relative'), 10);
+      if (ts > 0) {
+        el.textContent = relativePast(ts, now);
+      }
+    });
+
+    document.querySelectorAll('[data-ts-countdown]').forEach(function (el) {
+      var ts = parseInt(el.getAttribute('data-ts-countdown'), 10);
+      var interval = parseInt(el.getAttribute('data-ts-interval') || '60', 10);
+      if (ts > 0) {
+        el.textContent = countdown(ts, now, interval);
+      }
+    });
+
+    document.querySelectorAll('[data-ts-span]').forEach(function (el) {
+      var ts = parseInt(el.getAttribute('data-ts-span'), 10);
+      if (ts > 0) {
+        el.textContent = relativeSpan(ts, now);
+      }
+    });
+
+    var poller = window.htmx && document.querySelector('[data-live-poller]');
+    document.querySelectorAll('[data-live-pill]').forEach(function (el) {
+      el.hidden = !poller;
+    });
+  }
+
+  tickLiveTimestamps();
+  window.setInterval(tickLiveTimestamps, 1000);
+  document.body.addEventListener('htmx:afterSwap', tickLiveTimestamps);
+  document.body.addEventListener('htmx:oobAfterSwap', tickLiveTimestamps);
 })();

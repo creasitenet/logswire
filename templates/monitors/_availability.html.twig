@@ -1,0 +1,72 @@
+{% import 'macros/empty_state.html.twig' as empty %}
+{# Availability chart + legend. Included by the detail page and swapped out-of-band by the poller. #}
+<section class="monitor-section monitor-availability" id="monitor-availability"{% if oob|default(false) %} hx-swap-oob="true"{% endif %}>
+    <div class="monitor-section-head">
+        <h2>Availability</h2>
+        <nav class="range-switch" aria-label="Chart range">
+            {% for value, label in ranges %}
+                <a href="{{ path('monitors_get', {id: monitor.id, range: value}) }}"
+                   class="range-link{% if range == value %} is-active{% endif %}"
+                   {% if range == value %}aria-current="true"{% endif %}>{{ label }}</a>
+            {% endfor %}
+        </nav>
+    </div>
+
+    {% if series.probes == 0 %}
+        {{ empty.block(
+            'No checks in this range',
+            monitor.enabled ? 'The next scheduled check will appear here.' : 'Enable this monitor to resume checks.',
+            null,
+            null,
+            'default',
+            true,
+            true,
+            'monitor'
+        ) }}
+    {% else %}
+        <div class="chart-panel">
+            <svg class="chart chart-uptime" viewBox="0 0 {{ chart.width }} {{ chart.uptime_height }}" role="img"
+                 aria-label="Uptime per slot over the last {{ range }}">
+                {% for bar in chart.bars %}
+                    <rect x="{{ bar.x }}" y="{{ bar.y }}" width="{{ bar.width }}" height="{{ bar.height }}"
+                          rx="2" class="chart-bar is-{{ bar.state }}"></rect>
+                {% endfor %}
+            </svg>
+
+            <svg class="chart chart-latency" viewBox="0 0 {{ chart.width }} {{ chart.height }}" role="img"
+                 aria-label="Average latency per slot over the last {{ range }}">
+                {% for tick in chart.ticks %}
+                    <line x1="{{ chart.gutter }}" y1="{{ tick.y }}"
+                          x2="{{ chart.width }}" y2="{{ tick.y }}" class="chart-grid"></line>
+                    <text x="{{ chart.gutter - 8 }}" y="{{ tick.y + 3.5 }}"
+                          class="chart-tick" text-anchor="end">{{ tick.label }}</text>
+                {% endfor %}
+                {% for area in chart.areas %}
+                    <path d="{{ area }}" class="chart-area"></path>
+                {% endfor %}
+                {% for segment in chart.segments %}
+                    <path d="{{ segment }}" class="chart-line"></path>
+                {% endfor %}
+                {% for dot in chart.dots %}
+                    <circle cx="{{ dot.x }}" cy="{{ dot.y }}" r="{{ dot.down ? 4 : 2.8 }}"
+                            class="chart-dot{% if dot.down %} is-down{% endif %}">
+                        <title>{{ dot.ms }} ms</title>
+                    </circle>
+                {% endfor %}
+                <line x1="{{ chart.gutter }}" y1="{{ chart.baseline }}"
+                      x2="{{ chart.width }}" y2="{{ chart.baseline }}" class="chart-axis"></line>
+            </svg>
+
+            <p class="chart-caption muted small">{{ ranges[range] }} · average per slot</p>
+        </div>
+
+        <p class="chart-legend muted small">
+            {{ series.probes }} checks ·
+            avg {{ series.avg_ms is null ? '—' : series.avg_ms ~ ' ms' }} ·
+            peak {{ series.max_ms is null ? '—' : series.max_ms ~ ' ms' }}
+            <span class="legend"><span class="uptime-slot is-up"></span> up</span>
+            <span class="legend"><span class="uptime-slot is-down"></span> down</span>
+            <span class="legend"><span class="uptime-slot"></span> no data</span>
+        </p>
+    {% endif %}
+</section>

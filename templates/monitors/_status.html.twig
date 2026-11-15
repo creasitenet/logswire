@@ -1,0 +1,13 @@
+{# Status + live badge shown next to the monitor title. Swapped out-of-band by the poller. #}
+{% set status_label = monitor.status == 'up' ? 'Up' : (monitor.status == 'down' ? 'Down' : 'Pending') %}
+<span class="monitor-header-status" id="monitor-live-status"{% if oob|default(false) %} hx-swap-oob="true"{% endif %}>
+    <span class="monitor-state is-{{ monitor.status }}">
+        <span class="monitor-dot" aria-hidden="true"></span>{{ status_label }}
+    </span>
+    {% if not monitor.enabled %}
+        <span class="badge">Paused</span>
+    {% endif %}
+    <span class="live-pill" data-live-pill hidden title="Refreshing while this tab is open">
+        <span class="live-pill-dot" aria-hidden="true"></span>Live
+    </span>
+</span>

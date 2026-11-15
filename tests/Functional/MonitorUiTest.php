@@ -59,6 +59,33 @@ final class MonitorUiTest extends WebTestCase
         self::assertStringContainsString('Daily rollup', $body);
     }
 
+    public function testLiveFragmentSwapsLiveRegions(): void
+    {
+        $client = static::createClient();
+        $this->login($client);
+
+        $em = $client->getContainer()->get(EntityManagerInterface::class);
+        $monitor = Monitor::create(Uuid::v4()->toRfc4122(), 'https://example.net/live', 'live-monitor');
+        $em->persist($monitor);
+        $em->flush();
+
+        $client->request('GET', '/dashboard/monitors/'.$monitor->getId().'/live');
+        self::assertResponseIsSuccessful();
+        $body = (string) $client->getResponse()->getContent();
+
+        self::assertStringContainsString('id="monitor-live-meta"', $body);
+        self::assertStringContainsString('id="monitor-live-status"', $body);
+        self::assertStringContainsString('id="monitor-live-stats"', $body);
+        self::assertStringContainsString('id="monitor-availability"', $body);
+        self::assertStringContainsString('id="monitor-live-daily"', $body);
+        self::assertStringContainsString('id="monitor-live-incidents"', $body);
+        self::assertStringContainsString('Day buckets appear after the first successful check.', $body);
+        self::assertStringContainsString('hx-swap-oob="true"', $body);
+        self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));
+        self::assertStringContainsString('data-live-pill', $body);
+        self::assertStringContainsString('data-ts-countdown', $body);
+    }
+
     public function testCreateRejectsInvalidUrl(): void
     {
         $client = static::createClient();

@@ -807,12 +807,14 @@ textarea.input:focus {
 }
 .issues-table a,
 .project-table a {
-  color: var(--accent-deep);
+  color: var(--ink-soft);
   font-weight: 500;
   text-decoration: none;
+  transition: color 0.12s ease;
 }
 .issues-table a:hover,
 .project-table a:hover {
+  color: var(--accent-bright);
   text-decoration: underline;
 }
 
@@ -1134,13 +1136,12 @@ textarea.input:focus {
 .copy-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.55rem;
   align-items: flex-start;
 }
 .copy-row pre,
 .project-detail pre {
   flex: 1 1 100%;
-  margin: 0.5rem 0 1rem;
   padding: 1rem 1.1rem;
   background: var(--console);
   color: var(--console-text);
@@ -1149,6 +1150,13 @@ textarea.input:focus {
   overflow-x: auto;
   font-size: 0.82rem;
   line-height: 1.5;
+}
+/* Snippet examples keep breathing room; the DSN copy button sits right under its code block. */
+.project-detail pre {
+  margin: 0.5rem 0 1rem;
+}
+.copy-row pre {
+  margin: 0;
 }
 
 .project-detail h2,
@@ -1297,8 +1305,57 @@ textarea.input:focus {
   font-size: 0.78rem;
 }
 
-.monitor-meta {
+.monitor-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.7rem;
+}
+.monitor-header-status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.6rem;
   font-size: 0.82rem;
+}
+/* Auto-fitting equal-width cells keep the ticking relative labels from
+   shifting neighbors, and avoid truncating the UTC line on narrow headers. */
+.monitor-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.9rem 1.5rem;
+  width: 100%;
+  max-width: 48rem;
+  margin: 0.55rem 0 0;
+}
+.monitor-meta-cell {
+  min-width: 0;
+}
+.monitor-meta-label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted-2);
+}
+.monitor-meta-value {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.monitor-meta-sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .monitor-state {
   display: inline-flex;
@@ -1318,6 +1375,47 @@ textarea.input:focus {
   height: 0.5rem;
   border-radius: 999px;
   background: currentColor;
+}
+
+/* Revealed by JS once the live poller is active (never shown on a static page). */
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.live-pill[hidden] {
+  display: none;
+}
+.live-pill-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: currentColor;
+  animation: live-pulse 2s ease-in-out infinite;
+}
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-pill-dot {
+    animation: none;
+  }
+}
+.monitor-live-poller {
+  display: none;
 }
 
 .stat-cards {
@@ -1565,12 +1663,14 @@ textarea.input:focus {
   width: 100%;
   height: auto;
 }
+/* Both SVGs share the same viewBox width and no max-height, so they scale
+   uniformly at the same factor: the heartbeat bars stay aligned with the
+   latency plot at any viewport width. */
 .chart-uptime {
-  max-height: 2.75rem;
+  margin-bottom: 0.15rem;
 }
 .chart-latency {
   margin-top: 0.4rem;
-  max-height: 11rem;
 }
 .chart-axis {
   stroke: var(--line-subtle);
@@ -1620,9 +1720,6 @@ textarea.input:focus {
 }
 .chart-legend {
   margin: 0.5rem 0 0;
-}
-.chart-uptime {
-  margin-bottom: 0.15rem;
 }
 
 .monitor-layout {

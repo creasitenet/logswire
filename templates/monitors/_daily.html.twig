@@ -1,0 +1,42 @@
+{% import 'macros/empty_state.html.twig' as empty %}
+{# Daily rollup. Included by the detail page and swapped out-of-band by the poller. #}
+<section class="monitor-section" id="monitor-live-daily"{% if oob|default(false) %} hx-swap-oob="true"{% endif %}>
+    <h2>Daily rollup</h2>
+    {% if days is empty %}
+        {{ empty.block(
+            'No daily rollup yet',
+            'Day buckets appear after the first successful check.',
+            null,
+            null,
+            'default',
+            true,
+            true,
+            'monitor'
+        ) }}
+    {% else %}
+        <div class="table-wrap">
+        <table class="project-table">
+            <thead>
+                <tr>
+                    <th>Day (UTC)</th>
+                    <th>Checks</th>
+                    <th>Uptime</th>
+                    <th>Avg latency</th>
+                    <th>Max latency</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for day in days %}
+                    <tr>
+                        <td>{{ day.start|ts_human }}</td>
+                        <td>{{ day.probes }}</td>
+                        <td>{{ day.uptime is null ? '—' : day.uptime ~ '%' }}</td>
+                        <td>{{ day.avg_ms is null ? '—' : day.avg_ms ~ ' ms' }}</td>
+                        <td>{{ day.max_ms is null ? '—' : day.max_ms ~ ' ms' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% endif %}
+</section>

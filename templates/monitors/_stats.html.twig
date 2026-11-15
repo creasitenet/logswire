@@ -1,0 +1,31 @@
+{# Live stat cards. Included by the detail page and swapped out-of-band by the poller. #}
+{% set status_label = monitor.status == 'up' ? 'Up' : (monitor.status == 'down' ? 'Down' : 'Pending') %}
+<dl class="stat-cards stat-cards--compact" id="monitor-live-stats"{% if oob|default(false) %} hx-swap-oob="true"{% endif %}>
+    <div class="stat-card">
+        <dt>Status</dt>
+        <dd class="stat-card-value">{{ status_label|upper }}</dd>
+        <dd class="stat-card-sub">
+            {% if monitor.status_since is not null %}since {{ monitor.status_since|ts_human }}{% else %}current state{% endif %}
+        </dd>
+    </div>
+    <div class="stat-card">
+        <dt>Latency</dt>
+        <dd class="stat-card-value">{{ monitor.last_response_ms is not null ? monitor.last_response_ms ~ ' ms' : '—' }}</dd>
+        <dd class="stat-card-sub">HTTP {{ monitor.last_status_code ?? '—' }}</dd>
+    </div>
+    <div class="stat-card">
+        <dt>Avg 24 h</dt>
+        <dd class="stat-card-value">{{ last24h.avg_ms is not null ? last24h.avg_ms ~ ' ms' : '—' }}</dd>
+        <dd class="stat-card-sub">{{ last24h.probes }} checks</dd>
+    </div>
+    <div class="stat-card">
+        <dt>Uptime 24 h</dt>
+        <dd class="stat-card-value">{{ last24h.uptime is not null ? last24h.uptime ~ '%' : '—' }}</dd>
+        <dd class="stat-card-sub">avg {{ last24h.avg_ms is not null ? last24h.avg_ms ~ ' ms' : '—' }}</dd>
+    </div>
+    <div class="stat-card">
+        <dt>Uptime 30 d</dt>
+        <dd class="stat-card-value">{{ last30d.uptime is not null ? last30d.uptime ~ '%' : '—' }}</dd>
+        <dd class="stat-card-sub">{{ last30d.probes }} checks</dd>
+    </div>
+</dl>

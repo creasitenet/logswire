@@ -45,6 +45,17 @@ final class MonitorPresenter
      */
     public function detail(Monitor $monitor, string $range, ?int $now = null): array
     {
+        return $this->live($monitor, $range, $now);
+    }
+
+    /**
+     * Everything the monitor page renders and the poller refreshes: header
+     * meta, stat cards, availability chart, daily rollup and incidents.
+     *
+     * @return array<string, mixed>
+     */
+    public function live(Monitor $monitor, string $range, ?int $now = null): array
+    {
         $now ??= time();
         $range = MonitorMetrics::normalizeRange($range);
         $last24h = $this->metrics->series($monitor, MonitorMetrics::RANGE_24H, $now);
@@ -69,7 +80,17 @@ final class MonitorPresenter
             'chart' => MonitorMetricsChart::render($series['slots']),
             'days' => $this->metrics->dailyRollup($monitor, $now),
             'incidents' => $this->formatIncidents($monitor, $now),
+            'poll_seconds' => self::pollSeconds($monitor),
         ];
+    }
+
+    /**
+     * Poll a few times per check interval, bounded so an idle tab is quiet and
+     * a 60 s monitor still feels live.
+     */
+    private static function pollSeconds(Monitor $monitor): int
+    {
+        return max(15, min(60, intdiv($monitor->getIntervalSec(), 2)));
     }
 
     /**

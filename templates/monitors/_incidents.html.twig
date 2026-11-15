@@ -1,0 +1,39 @@
+{% import 'macros/empty_state.html.twig' as empty %}
+{# Incident history. Included by the detail page and swapped out-of-band by the poller. #}
+<aside class="monitor-section monitor-layout__aside"
+       id="monitor-live-incidents"
+       aria-labelledby="monitor-incidents-heading"{% if oob|default(false) %} hx-swap-oob="true"{% endif %}>
+    <h2 id="monitor-incidents-heading">Incidents <span class="muted small">{{ incidents|length }}</span></h2>
+    {% if incidents is empty %}
+        {{ empty.block(
+            'No incidents',
+            'Downtime windows show here after two failed checks in a row.',
+            null,
+            null,
+            'positive',
+            true,
+            true,
+            'check'
+        ) }}
+    {% else %}
+        <ul class="incident-list">
+            {% for incident in incidents %}
+                <li class="incident">
+                    <p class="incident-head">
+                        {% if incident.ended_at is null %}
+                            <span class="badge down">Ongoing</span>
+                        {% endif %}
+                        <span>{{ incident.started_at|ts_human }}</span>
+                        {% if incident.ended_at is not null %}
+                            <span class="muted">→ {{ incident.ended_at|ts_human }}</span>
+                        {% endif %}
+                        <span class="muted">· {{ incident.duration }}</span>
+                    </p>
+                    {% if incident.error is not null %}
+                        <p class="muted small incident-error">{{ incident.error }}</p>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</aside>

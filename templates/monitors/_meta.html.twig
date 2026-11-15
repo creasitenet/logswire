@@ -1,0 +1,54 @@
+{# Live header metrics. Included by the detail page and swapped out-of-band by the poller.
+   Fixed-width grid so ticking relative labels never reflow the neighboring cells. #}
+<dl class="monitor-meta-grid" id="monitor-live-meta"{% if oob|default(false) %} hx-swap-oob="true"{% endif %}>
+    <div class="monitor-meta-cell">
+        {% if monitor.status_since is not null %}
+            <dt class="monitor-meta-label">
+                {{ monitor.status == 'down' ? 'Down for' : (monitor.status == 'up' ? 'Up for' : 'Status') }}
+            </dt>
+            <dd class="monitor-meta-value"
+                data-ts-span="{{ monitor.status_since }}">{{ monitor.status_since|ts_human }}</dd>
+            <dd class="monitor-meta-sub">{{ monitor.status_since|ts_human }}</dd>
+        {% else %}
+            <dt class="monitor-meta-label">Status</dt>
+            <dd class="monitor-meta-value">{{ monitor.status == 'up' ? 'Up' : (monitor.status == 'down' ? 'Down' : 'Pending') }}</dd>
+            <dd class="monitor-meta-sub">no check yet</dd>
+        {% endif %}
+    </div>
+
+    <div class="monitor-meta-cell">
+        <dt class="monitor-meta-label">Last check</dt>
+        {% if monitor.last_checked_at is not null %}
+            <dd class="monitor-meta-value"
+                data-ts-relative="{{ monitor.last_checked_at }}">{{ monitor.last_checked_at|ts_human }}</dd>
+            <dd class="monitor-meta-sub">{{ monitor.last_checked_at|ts_human }}</dd>
+        {% else %}
+            <dd class="monitor-meta-value">—</dd>
+            <dd class="monitor-meta-sub">never checked</dd>
+        {% endif %}
+    </div>
+
+    <div class="monitor-meta-cell">
+        {% if not monitor.enabled %}
+            <dt class="monitor-meta-label">Checks</dt>
+            <dd class="monitor-meta-value">Paused</dd>
+            <dd class="monitor-meta-sub">resume to restart</dd>
+        {% elseif monitor.next_check_at is not null %}
+            <dt class="monitor-meta-label">Next check</dt>
+            <dd class="monitor-meta-value"
+                data-ts-countdown="{{ monitor.next_check_at }}"
+                data-ts-interval="{{ monitor.interval_sec }}">{{ monitor.next_check_at|ts_human }}</dd>
+            <dd class="monitor-meta-sub">{{ monitor.next_check_at|ts_human }}</dd>
+        {% else %}
+            <dt class="monitor-meta-label">Next check</dt>
+            <dd class="monitor-meta-value">—</dd>
+            <dd class="monitor-meta-sub">waiting for schedule</dd>
+        {% endif %}
+    </div>
+
+    <div class="monitor-meta-cell">
+        <dt class="monitor-meta-label">Interval</dt>
+        <dd class="monitor-meta-value">Every {{ monitor.interval_sec }} s</dd>
+        <dd class="monitor-meta-sub">scheduled checks</dd>
+    </div>
+</dl>

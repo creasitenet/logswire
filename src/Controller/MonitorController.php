@@ -76,6 +76,23 @@ final class MonitorController extends AbstractController
         ]);
     }
 
+    /**
+     * htmx OOB fragment consumed by the detail poller (header meta, stat cards, chart).
+     */
+    #[Route('/{id}/live', name: 'monitors_live', methods: ['GET'])]
+    public function live(string $id, Request $request): Response
+    {
+        $monitor = $this->monitors->get($id);
+
+        $response = $this->render('monitors/live.html.twig', [
+            ...$this->presenter->live($monitor, $request->query->getString('range')),
+            'oob' => true,
+        ]);
+        $response->headers->set('Cache-Control', 'no-store');
+
+        return $response;
+    }
+
     #[Route('/{id}/edit', name: 'monitors_edit', methods: ['GET', 'POST'])]
     public function edit(string $id, Request $request): Response
     {

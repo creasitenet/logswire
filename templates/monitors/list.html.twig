@@ -9,7 +9,7 @@
     <header class="page-header">
         <div>
             <h1>Monitors</h1>
-            <p class="muted small page-subtitle">HTTP endpoints probed on a fixed interval. Down and recovered transitions are sent to Telegram.</p>
+            <p class="muted small page-subtitle">HTTP endpoints checked on a fixed interval. Down and recovered transitions are sent to Telegram.</p>
         </div>
         <a class="btn btn-primary" href="{{ path('monitors_new') }}">New monitor</a>
     </header>
@@ -23,7 +23,7 @@
     {% if monitors is empty %}
         {{ empty.block(
             'No monitors yet',
-            'Create an HTTP(S) endpoint check. The probe loops on a fixed interval and aggregates uptime in the dashboard.',
+            'Create an HTTP(S) endpoint check. Checks run on a fixed interval and aggregate uptime in the dashboard.',
             'New monitor',
             path('monitors_new'),
             'default',
