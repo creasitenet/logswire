@@ -15,8 +15,9 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * Return JSON error bodies for /api/* requests so SDKs receive parseable
  * responses instead of HTML pages.
  *
- * Priority must be lower than {@see ErrorListener::onKernelException} (-128)
- * so we replace the HTML error page instead of being overwritten by it.
+ * The kernel's {@see ErrorListener} renders the HTML error page at priority
+ * -128 and setting a response stops the event propagation. We must therefore
+ * run *before* it; running after would never be called.
  */
 final class ApiExceptionSubscriber implements EventSubscriberInterface
 {
@@ -27,7 +28,7 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
 
     public static function getSubscribedEvents(): array
     {
-        return [KernelEvents::EXCEPTION => ['onException', -129]];
+        return [KernelEvents::EXCEPTION => ['onException', -100]];
     }
 
     public function onException(ExceptionEvent $event): void

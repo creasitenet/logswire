@@ -32,12 +32,38 @@ final class IngestControllerTest extends WebTestCase
         self::ensureKernelShutdown();
     }
 
-    public function testMissingSentryKeyReturns401(): void
+    public function testMissingSentryKeyReturnsJson401(): void
     {
         $client = static::createClient();
         $client->request('POST', '/api/does-not-exist/envelope/', content: '{}');
 
         self::assertResponseStatusCodeSame(401);
+        self::assertResponseHeaderSame('Content-Type', 'application/json');
+        self::assertJsonStringEqualsJsonString(
+            '{"error":"Missing X-Sentry-Auth sentry_key."}',
+            (string) $client->getResponse()->getContent(),
+        );
+    }
+
+    public function testUnknownProjectReturnsJson404(): void
+    {
+        $client = static::createClient();
+        $client->request(
+            'POST',
+            '/api/does-not-exist/envelope/',
+            server: [
+                'HTTP_X_SENTRY_AUTH' => 'Sentry sentry_version=7, sentry_key=deadbeef',
+                'CONTENT_TYPE' => 'application/x-sentry-envelope',
+            ],
+            content: '{}',
+        );
+
+        self::assertResponseStatusCodeSame(404);
+        self::assertResponseHeaderSame('Content-Type', 'application/json');
+        self::assertJsonStringEqualsJsonString(
+            '{"error":"project_not_found"}',
+            (string) $client->getResponse()->getContent(),
+        );
     }
 
     public function testSentryKeyFirstInAuthHeaderIsAccepted(): void
