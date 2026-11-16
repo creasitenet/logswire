@@ -16,7 +16,7 @@
   src: url("../fonts/jetbrains-mono.woff2") format("woff2");
 }
 
-/* Dark-only UI (ops console). Login panel uses a local light card on the dark pitch. */
+/* Dark-only UI (ops console). */
 :root {
   color-scheme: dark;
   --ink: rgba(241, 245, 249, 0.96);
@@ -59,7 +59,9 @@
   --btn-secondary-bg: #1a2330;
   --btn-secondary-fg: var(--ink);
   --btn-secondary-border: var(--line);
-  --btn-primary-fg: #042f2e;
+  --primary: #0d9488;
+  --primary-hover: #0f766e;
+  --primary-fg: #ffffff;
   --field-bg: #0e1622;
   --field-fg: var(--ink);
   --field-border: var(--line);
@@ -289,6 +291,19 @@ kbd {
   color: var(--muted);
   width: 100%;
 }
+/* Project navigation, kept out of the Edit/Delete action group. */
+.project-issues-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--accent-bright);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.project-issues-link:hover {
+  color: var(--ink);
+}
 .page-header-actions {
   display: flex;
   flex-wrap: wrap;
@@ -443,49 +458,6 @@ kbd {
   box-shadow: var(--shadow-panel);
 }
 
-/* Login card: light form on the dark pitch (only exception to dark-only shell). */
-.layout-guest .auth-panel {
-  --login-ink: #0f172a;
-  --login-muted: #64748b;
-  --login-line: rgba(15, 23, 42, 0.14);
-  --login-field-bg: #eef3f5;
-  background: #f1f5f9;
-  border-color: var(--login-line);
-  color: var(--login-ink);
-  color-scheme: light;
-}
-.layout-guest .auth-panel .field-label {
-  color: #334155;
-}
-.layout-guest .auth-panel .field input {
-  background: var(--login-field-bg);
-  color: var(--login-ink);
-  border-color: var(--login-line);
-}
-.layout-guest .auth-panel .field input::placeholder {
-  color: #94a3b8;
-}
-.layout-guest .auth-panel .muted,
-.layout-guest .auth-panel .small {
-  color: var(--login-muted);
-}
-.layout-guest .auth-panel code {
-  color: #0f766e;
-}
-.layout-guest .auth-panel .flash-error {
-  background: #fef2f2;
-  color: #b91c1c;
-  border-color: rgba(185, 28, 28, 0.25);
-}
-.layout-guest .auth-form .btn-primary {
-  background: #0f766e;
-  color: #f8fafc;
-}
-.layout-guest .auth-form .btn-primary:hover {
-  background: #0d5c56;
-  color: #f8fafc;
-}
-
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -572,13 +544,13 @@ textarea.input:focus {
   border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
 }
 .btn-primary {
-  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  background: var(--accent);
-  color: var(--btn-primary-fg);
+  border: 1px solid color-mix(in srgb, var(--primary) 70%, transparent);
+  background: var(--primary);
+  color: var(--primary-fg);
 }
 .btn-primary:hover {
-  background: color-mix(in srgb, var(--accent) 88%, #000 12%);
-  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 .btn-danger {
   border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
@@ -598,7 +570,7 @@ textarea.input:focus {
   border-color: var(--line-subtle);
 }
 .btn-primary:disabled {
-  background: color-mix(in srgb, var(--accent) 35%, var(--panel));
+  background: color-mix(in srgb, var(--primary) 35%, var(--panel));
   color: var(--muted);
 }
 
@@ -815,7 +787,6 @@ textarea.input:focus {
 .issues-table a:hover,
 .project-table a:hover {
   color: var(--accent-bright);
-  text-decoration: underline;
 }
 
 .issues-table .col-actions {
@@ -1252,8 +1223,8 @@ textarea.input:focus {
   background: #cbd5e1;
 }
 .switch-input:checked + .switch-track {
-  background: var(--accent-deep);
-  border-color: var(--accent-deep);
+  background: var(--primary);
+  border-color: var(--primary);
 }
 .switch-input:checked + .switch-track::after {
   transform: translateX(1.2rem);

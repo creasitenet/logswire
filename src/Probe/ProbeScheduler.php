@@ -41,6 +41,12 @@ final class ProbeScheduler
             ++$processed;
         }
 
+        // The probe loop is a long-lived process. Without clearing, Doctrine's
+        // identity map keeps the pre-pause copy of a monitor and ignores the
+        // web process's pause/resume changes: the probe runs, but the status
+        // column can stay "unknown" (Pending) forever.
+        $this->em->clear();
+
         return $processed;
     }
 

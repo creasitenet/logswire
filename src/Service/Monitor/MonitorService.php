@@ -72,16 +72,24 @@ final class MonitorService
 
     /**
      * Pausing a monitor ends its outage: the open incident is closed and the
-     * probe state is forgotten so a resumed monitor starts from scratch.
+     * probe state is forgotten so a resumed monitor starts from scratch. A
+     * resume schedules an immediate check instead of waiting for a stale slot.
      */
     private function applyEnabled(Monitor $monitor, bool $enabled, int $now): void
     {
+        $wasEnabled = $monitor->isEnabled();
         $monitor->setEnabled($enabled, $now);
 
-        if (!$enabled) {
-            $this->incidents->findOpenForMonitor($monitor)?->close($now);
-            $monitor->resetProbeState($now);
+        if ($enabled) {
+            if (!$wasEnabled) {
+                $monitor->setNextCheckAt($now);
+            }
+
+            return;
         }
+
+        $this->incidents->findOpenForMonitor($monitor)?->close($now);
+        $monitor->resetProbeState($now);
     }
 
     public function delete(Monitor $monitor): void

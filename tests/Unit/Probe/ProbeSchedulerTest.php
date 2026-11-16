@@ -128,6 +128,15 @@ final class ProbeSchedulerTest extends TestCase
         self::assertGreaterThanOrEqual($before + 300, $monitor->getNextCheckAt());
     }
 
+    public function testTickClearsTheEntityManagerForTheNextCycle(): void
+    {
+        $this->schedule($this->monitor());
+        $this->probe->method('run')->willReturn(new ProbeOutcome(true, 200, 10, null));
+        $this->em->expects(self::once())->method('clear');
+
+        self::assertSame(1, $this->scheduler->tick());
+    }
+
     /**
      * @param array<Monitor> $monitors
      */

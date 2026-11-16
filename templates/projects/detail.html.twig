@@ -17,10 +17,12 @@
                     <span class="badge down" title="New events are rejected until you re-enable the project">Ingest off</span>
                 {% endif %}
                 <span class="muted">Created {% include '_time_utc.html.twig' with {at: project.created_at} only %}</span>
+                <a class="project-issues-link" href="{{ path('issues_list', {project_id: project.id}) }}">
+                    See issues <span aria-hidden="true">→</span>
+                </a>
             </div>
         </div>
         <div class="page-header-actions">
-            <a class="btn" href="{{ path('issues_list', {project_id: project.id}) }}">Issues</a>
             <a class="btn" href="{{ path('projects_edit', {id: project.id}) }}">Edit</a>
             <form method="post" action="{{ path('projects_delete', {id: project.id}) }}" class="inline-form">
                 {{ csrf.input('project_action') }}
