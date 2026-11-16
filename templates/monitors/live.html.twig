@@ -1,6 +1,7 @@
 {# htmx OOB response for the monitor live poller: title status, header metrics, stat cards, chart, rollup, incidents. #}
 {% include 'monitors/_status.html.twig' with {monitor: monitor, oob: true} only %}
 {% include 'monitors/_meta.html.twig' with {monitor: monitor, oob: true} only %}
+{% include 'monitors/_error.html.twig' with {monitor: monitor, oob: true} only %}
 {% include 'monitors/_stats.html.twig' with {monitor: monitor, last24h: last24h, last30d: last30d, oob: true} only %}
 {% include 'monitors/_availability.html.twig' with {
     monitor: monitor,

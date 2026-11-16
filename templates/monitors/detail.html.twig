@@ -44,9 +44,7 @@
         {% endfor %}
     {% endfor %}
 
-    {% if monitor.last_error is not null and monitor.status == 'down' %}
-        <p class="flash flash-error">{{ monitor.last_error }}</p>
-    {% endif %}
+    {% include 'monitors/_error.html.twig' with {monitor: monitor} only %}
 
     {% include 'monitors/_stats.html.twig' with {
         monitor: monitor,

@@ -75,6 +75,7 @@ final class MonitorUiTest extends WebTestCase
 
         self::assertStringContainsString('id="monitor-live-meta"', $body);
         self::assertStringContainsString('id="monitor-live-status"', $body);
+        self::assertStringContainsString('id="monitor-live-error"', $body);
         self::assertStringContainsString('id="monitor-live-stats"', $body);
         self::assertStringContainsString('id="monitor-availability"', $body);
         self::assertStringContainsString('id="monitor-live-daily"', $body);
@@ -84,6 +85,36 @@ final class MonitorUiTest extends WebTestCase
         self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));
         self::assertStringContainsString('data-live-pill', $body);
         self::assertStringContainsString('data-ts-countdown', $body);
+    }
+
+    public function testLiveResponseOnlyShowsTheErrorBannerWhileDown(): void
+    {
+        $client = static::createClient();
+        $this->login($client);
+
+        $em = $client->getContainer()->get(EntityManagerInterface::class);
+        $down = Monitor::create(Uuid::v4()->toRfc4122(), 'https://example.net/down', 'down-monitor');
+        $down->applyProbeResult(Monitor::STATUS_DOWN, 500, 12, 'HTTP 500', time() - 60);
+        $down->applyProbeResult(Monitor::STATUS_DOWN, 500, 12, 'HTTP 500', time() - 30);
+        $up = Monitor::create(Uuid::v4()->toRfc4122(), 'https://example.net/up', 'up-monitor');
+        $up->applyProbeResult(Monitor::STATUS_UP, 200, 20, null, time());
+        $em->persist($down);
+        $em->persist($up);
+        $em->flush();
+
+        $client->request('GET', '/dashboard/monitors/'.$down->getId().'/live');
+        self::assertResponseIsSuccessful();
+        $body = (string) $client->getResponse()->getContent();
+        self::assertStringContainsString('id="monitor-live-error"', $body);
+        self::assertStringContainsString('flash-error', $body);
+        self::assertStringContainsString('HTTP 500', $body);
+
+        $client->request('GET', '/dashboard/monitors/'.$up->getId().'/live');
+        self::assertResponseIsSuccessful();
+        $body = (string) $client->getResponse()->getContent();
+        self::assertStringContainsString('id="monitor-live-error"', $body);
+        self::assertStringNotContainsString('flash-error', $body);
+        self::assertStringNotContainsString('HTTP 500', $body);
     }
 
     public function testCreateRejectsInvalidUrl(): void
