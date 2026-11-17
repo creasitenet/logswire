@@ -27,12 +27,21 @@ final class MonitorController extends AbstractController
     }
 
     #[Route('', name: 'monitors_list', methods: ['GET'])]
-    public function list(): Response
+    public function list(Request $request): Response
     {
-        return $this->render('monitors/list.html.twig', [
+        $view = [
             'title' => 'Monitors — Logswire',
             'monitors' => $this->presenter->listRows($this->monitors->list()),
-        ]);
+        ];
+
+        if ($request->headers->get('HX-Request')) {
+            $response = $this->render('monitors/_table.html.twig', $view);
+            $response->headers->set('Cache-Control', 'no-store');
+
+            return $response;
+        }
+
+        return $this->render('monitors/list.html.twig', $view);
     }
 
     #[Route('/new', name: 'monitors_new', methods: ['GET', 'POST'])]

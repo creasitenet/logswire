@@ -1,5 +1,4 @@
 {% extends 'base.html.twig' %}
-{% import 'macros/empty_state.html.twig' as empty %}
 
 {% block title %}{{ title }}{% endblock %}
 {% block head %}<meta name="robots" content="noindex">{% endblock %}
@@ -20,85 +19,6 @@
         {% endfor %}
     {% endfor %}
 
-    {% if monitors is empty %}
-        {{ empty.block(
-            'No monitors yet',
-            'Create an HTTP(S) endpoint check. Checks run on a fixed interval and aggregate uptime in the dashboard.',
-            'New monitor',
-            path('monitors_new'),
-            'default',
-            false,
-            false,
-            'monitor'
-        ) }}
-    {% else %}
-        <div class="table-wrap">
-        <table class="project-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Status</th>
-                    <th>Last 24 h</th>
-                    <th>Uptime 24 h</th>
-                    <th>Latency</th>
-                    <th>Last check</th>
-                    <th>Interval</th>
-                    <th>Active</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for monitor in monitors %}
-                    <tr>
-                        <td>
-                            <a href="{{ path('monitors_get', {id: monitor.id}) }}">{{ monitor.name }}</a>
-                            <div class="muted small monitor-url"><code>{{ monitor.url }}</code></div>
-                        </td>
-                        <td>
-                            {% if monitor.status == 'up' %}
-                                <span class="badge ok">Up</span>
-                            {% elseif monitor.status == 'down' %}
-                                <span class="badge down">Down</span>
-                            {% else %}
-                                <span class="badge">Pending</span>
-                            {% endif %}
-                            {% if monitor.status_since is not null %}
-                                <div class="muted small">since {{ monitor.status_since|ts_human }}</div>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% set lat_max = 50 %}
-                            {% for slot in monitor.slots %}
-                                {% if slot.avg_ms is not null and slot.avg_ms > lat_max %}
-                                    {% set lat_max = slot.avg_ms %}
-                                {% endif %}
-                            {% endfor %}
-                            <svg class="sparkline" viewBox="0 0 120 24" role="img"
-                                 aria-label="Latency of the last 24 hours">
-                                {% for slot in monitor.slots %}
-                                    {% set height = slot.avg_ms is null ? 2 : max(2, (slot.avg_ms / lat_max * 22)|round) %}
-                                    <rect x="{{ loop.index0 * 5 }}" y="{{ 24 - height }}" width="4" height="{{ height }}"
-                                          rx="1" class="spark-bar is-{{ slot.state }}">
-                                        <title>{{ slot.start|ts_human }} · {{ slot.avg_ms is null ? 'no data' : slot.avg_ms ~ ' ms' }}{% if slot.state == 'down' %} · down{% endif %}</title>
-                                    </rect>
-                                {% endfor %}
-                            </svg>
-                        </td>
-                        <td>
-                            <span class="uptime-value{% if monitor.uptime_24h is not null and monitor.uptime_24h < 99.5 %} is-low{% endif %}">
-                                {{ monitor.uptime_24h is null ? '—' : monitor.uptime_24h ~ '%' }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if monitor.last_response_ms is not null %}{{ monitor.last_response_ms }} ms{% else %}<span class="muted">—</span>{% endif %}
-                        </td>
-                        <td>{{ monitor.last_checked_at|ts_human }}</td>
-                        <td>{{ monitor.interval_sec }} s</td>
-                        <td>{% include 'monitors/_toggle_switch.html.twig' with {monitor: monitor} only %}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        </div>
-    {% endif %}
+    {% include 'monitors/_table.html.twig' with {monitors: monitors} only %}
 </section>
 {% endblock %}

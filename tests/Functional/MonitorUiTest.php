@@ -50,6 +50,7 @@ final class MonitorUiTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('api-prod', (string) $client->getResponse()->getContent());
         self::assertStringContainsString('https://example.com/health', (string) $client->getResponse()->getContent());
+        self::assertStringContainsString('hx-trigger="every 60s"', (string) $client->getResponse()->getContent());
 
         $client->request('GET', '/dashboard/monitors/'.$monitor->getId());
         self::assertResponseIsSuccessful();
@@ -57,6 +58,27 @@ final class MonitorUiTest extends WebTestCase
         self::assertStringContainsString('api-prod', $body);
         self::assertStringContainsString('Uptime 24 h', $body);
         self::assertStringContainsString('Daily rollup', $body);
+    }
+
+    public function testListFragmentRefreshesWithoutLayout(): void
+    {
+        $client = static::createClient();
+        $this->login($client);
+
+        $em = $client->getContainer()->get(EntityManagerInterface::class);
+        $monitor = Monitor::create(Uuid::v4()->toRfc4122(), 'https://example.net/fragment', 'fragment-monitor');
+        $em->persist($monitor);
+        $em->flush();
+
+        $client->request('GET', '/dashboard/monitors', server: ['HTTP_HX_REQUEST' => 'true']);
+        self::assertResponseIsSuccessful();
+        $body = (string) $client->getResponse()->getContent();
+
+        self::assertStringContainsString('id="monitors-results"', $body);
+        self::assertStringContainsString('hx-trigger="every 60s"', $body);
+        self::assertStringContainsString('fragment-monitor', $body);
+        self::assertStringNotContainsString('<html', $body);
+        self::assertStringContainsString('no-store', (string) $client->getResponse()->headers->get('Cache-Control'));
     }
 
     public function testLiveFragmentSwapsLiveRegions(): void
