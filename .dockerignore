@@ -17,3 +17,4 @@ docs/
 !README.md
 compose.override.yaml
 .DS_Store
+**/.DS_Store

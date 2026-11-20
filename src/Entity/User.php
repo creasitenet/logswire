@@ -124,7 +124,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Equatab
 
     public function isEqualTo(UserInterface $user): bool
     {
-        return $this->getUserIdentifier() === $user->getUserIdentifier();
+        if (!$user instanceof self) {
+            return false;
+        }
+
+        // Comparing the hash invalidates existing sessions when an operator
+        // resets the password from the CLI.
+        return $this->getUserIdentifier() === $user->getUserIdentifier()
+            && $this->password === $user->password;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

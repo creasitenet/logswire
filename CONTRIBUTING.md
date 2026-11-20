@@ -19,9 +19,9 @@ PHPUnit uses a file-backed SQLite schema (`var/test.db`) by default; `composer t
 publishes its `postgres` service on `127.0.0.1:5433`). It creates and drops its
 own `logswire_upsert_test` schema, so it never touches your data.
 
-CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs PHPStan and
-PHPUnit on PHP 8.5 for every push and pull request, plus `composer test-pg`
-against a `postgres:16-alpine` service.
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs `composer audit`,
+PHPStan and PHPUnit on PHP 8.5 for every push and pull request, plus
+`composer test-pg` against a `postgres:16-alpine` service.
 
 ## Smoke test
 

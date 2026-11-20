@@ -89,6 +89,24 @@ only alert channel.
 
 ### Security
 
+- **Production secret guards**: the app refuses to boot in `APP_ENV=prod` with the
+  `.env.example` `APP_SECRET`, and Compose now requires a non-empty
+  `POSTGRES_PASSWORD`.
+- **Network exposure**: the app port is published on `127.0.0.1` only; the bundled
+  Caddyfile caps request bodies at `INGEST_MAX_BODY_MB` (default 12, configurable
+  without rebuilding the image) and answers common credential/WordPress/Adminer
+  probes with a cheap 404.
+- **Ingest scrubbing**: `PayloadScrubber` redacts password/token/cookie/
+  authorization values in stored raw payloads (`LOGSWIRE_SCRUB_SENSITIVE`, default
+  on).
+- **Headers & caching**: HSTS is emitted when `APP_PUBLIC_URL` is HTTPS, authenticated
+  pages are `Cache-Control: no-store`, and CSP/COOP/CORP/`object-src` were tightened.
+- **Robustness**: `/healthz` is rate-limited (trusted proxies and their own health
+  probes are exempt, so a reverse proxy cannot trigger false 429s); malformed UUIDs
+  return 404/400 instead of 500; password minimum is 12 characters and a password
+  reset invalidates live sessions.
+- **Operations**: retention indexes on `events.received_at` / `issues.last_seen_at`,
+  backups chmod `0600`, and CI runs `composer audit`.
 - `/healthz` no longer exposes database errors in JSON; post-login and ingest
   redirects reject off-site targets; logout is POST + CSRF; ingest is rate-limited
   and gzip bodies are bounded before decode.

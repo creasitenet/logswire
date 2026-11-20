@@ -27,6 +27,7 @@ final class IngestService
         private readonly EventRepository $events,
         private readonly StacktraceReader $stacktraces,
         private readonly NotificationQueue $notifications,
+        private readonly PayloadScrubber $scrubber,
         private readonly LoggerInterface $logger,
     ) {
     }
@@ -140,7 +141,10 @@ final class IngestService
 
         $sdkName = $payload['sdk']['name'] ?? null;
         $sdkVersion = $payload['sdk']['version'] ?? null;
-        $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: null;
+        $payloadJson = json_encode(
+            $this->scrubber->scrub($payload),
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+        ) ?: null;
 
         $event = (new Event())
             ->setProject($project)

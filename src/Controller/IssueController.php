@@ -11,12 +11,12 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Uid\Uuid;
 
 #[Route('/issues')]
 final class IssueController extends AbstractController
 {
     use CsrfGuardTrait;
+    use UuidParamTrait;
 
     private const int PER_PAGE = 25;
     private const string CSRF_TOKEN = 'issue_action';
@@ -95,7 +95,7 @@ final class IssueController extends AbstractController
     #[Route('/{id}', name: 'issues_get', requirements: ['id' => '[0-9a-f\-]{36}'], methods: ['GET'])]
     public function get(string $id): Response
     {
-        $issue = $this->issues->get(Uuid::fromString($id));
+        $issue = $this->issues->get($this->uuidOr404($id));
 
         return $this->render('issues/detail.html.twig', [
             'title' => ($issue->getTitle() ?: 'Issue').' — Logswire',
@@ -108,7 +108,7 @@ final class IssueController extends AbstractController
     {
         $this->guardCsrf($request, self::CSRF_TOKEN);
 
-        $issue = $this->issues->get(Uuid::fromString($id));
+        $issue = $this->issues->get($this->uuidOr404($id));
         $this->issues->setStatus($issue, 'resolved');
 
         if ($request->headers->get('HX-Request')) {
@@ -128,7 +128,7 @@ final class IssueController extends AbstractController
     {
         $this->guardCsrf($request, self::CSRF_TOKEN);
 
-        $issue = $this->issues->get(Uuid::fromString($id));
+        $issue = $this->issues->get($this->uuidOr404($id));
         $this->issues->setStatus($issue, 'unresolved');
 
         if ($request->headers->get('HX-Request')) {

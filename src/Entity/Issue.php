@@ -14,6 +14,7 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\UniqueConstraint(name: 'uniq_issues_project_fingerprint', columns: ['project_id', 'fingerprint'])]
 #[ORM\Index(name: 'idx_issues_project_last_seen', columns: ['project_id', 'last_seen_at'])]
 #[ORM\Index(name: 'idx_issues_project_status', columns: ['project_id', 'status'])]
+#[ORM\Index(name: 'idx_issues_last_seen_at', columns: ['last_seen_at'])]
 class Issue
 {
     public const STATUS_UNRESOLVED = 'unresolved';

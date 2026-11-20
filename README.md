@@ -29,11 +29,15 @@ cp .env.example .env
 
 Edit `.env`:
 
-- `APP_SECRET` — generate one with `openssl rand -hex 32`
-- `APP_PUBLIC_URL` — public URL (e.g. `https://logswire.example.com`)
-- `POSTGRES_PASSWORD` — pick a strong password before exposing the host
+- `APP_SECRET` — generate one with `openssl rand -hex 32`. The app refuses to
+  start with `APP_ENV=prod` while the placeholder from `.env.example` is in place.
+- `APP_PUBLIC_URL` — public HTTPS URL (e.g. `https://logswire.example.com`)
+- `POSTGRES_PASSWORD` — **required**: Compose refuses to start while it is empty.
+  Generate one with `openssl rand -hex 32`.
 - `APP_HTTP_PORT` — host port published by Docker (default `8080`; change it,
   and `APP_PUBLIC_URL` with it, if the port is already taken)
+- `TRUSTED_PROXIES` — the proxy IP/CIDR when TLS is terminated in front of the app
+  (needed for real client IPs, `Secure` cookies and HSTS)
 
 ```bash
 docker compose up -d --build
@@ -156,6 +160,10 @@ avoid hammering a dead host.
 
 Set `TRUSTED_PROXIES` and `APP_PUBLIC_URL` to your public HTTPS URL.
 
+By default the app port is published on **`127.0.0.1` only**, so it cannot be
+reached from the Internet without a proxy. Do not widen that binding unless you
+have a firewall rule you trust.
+
 **Case 1 — proxy on the host** (Caddy on the VPS, not in Docker): forward to the
 published port, e.g. `127.0.0.1:${APP_HTTP_PORT}`.
 
@@ -168,9 +176,14 @@ logswire.example.com {
 **Case 2 — NPM (or similar) in Docker on a shared network** (several stacks on one
 machine): in `compose.yaml`, uncomment `proxy-tier` under `networks:` and on
 service `logswire`, then recreate the stack. In NPM set Forward Hostname to
-`logswire`, port `8080` (not the host-mapped port). The external network name
-(`proxy-tier`, `web`, …) is yours — adjust `name:` in the compose comment. Postgres
-and `probe` stay on `logswire-net` only.
+`logswire`, port `8080` (not the host-mapped port). You can remove the loopback
+`ports:` mapping entirely in this case. The external network name (`proxy-tier`,
+`web`, …) is yours — adjust `name:` in the compose comment. Postgres and `probe`
+stay on `logswire-net` only.
+
+Once the proxy is in front, set `TRUSTED_PROXIES` to its IP/CIDR. Without it,
+Symfony sees the proxy as the client: rate limits are shared by every visitor,
+the session cookie is not marked `Secure`, and HSTS is not emitted.
 
 ## Backups
 
@@ -181,9 +194,12 @@ docker compose exec logswire bin/console app:db:restore /app/var/backups/logswir
 
 `app:db:backup` runs `pg_dump` (plain SQL, `--clean --if-exists --no-owner`)
 against the same connection as the app and writes to `./var/backups/` by
-default (`--output/-o` to change). Restore drops and recreates the schema, so
-stop `logswire`, `probe` and `worker` first. Copy dumps off the host: the Postgres data
-itself lives in a Docker volume, not in `./var/data/`.
+default (`--output/-o` to change). The dump is created with mode `0600` because
+it contains event payloads, but it is **not encrypted**: encrypt it or store it
+on an encrypted volume before copying it off the host. Restore drops and
+recreates the schema, so stop `logswire`, `probe` and `worker` first. Copy dumps
+off the host: the Postgres data itself lives in a Docker volume, not in
+`./var/data/`.
 
 Without the container, plain Postgres tools work too:
 

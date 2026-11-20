@@ -133,29 +133,48 @@ final class IngestController extends AbstractController
 
     private function readBody(Request $request): string
     {
+        $max = $this->limits->maxBodyBytes;
+
         $contentLength = $request->headers->get('Content-Length');
         if ($contentLength !== null && $contentLength !== '') {
             $len = (int) $contentLength;
-            if ($len > $this->limits->maxBodyBytes) {
+            if ($len > $max) {
                 throw new HttpException(413, 'payload_too_large');
             }
         }
 
-        $raw = $request->getContent();
-        if (strtolower((string) $request->headers->get('Content-Encoding', '')) === 'gzip') {
-            if (\strlen($raw) > $this->limits->maxBodyBytes) {
-                throw new HttpException(413, 'payload_too_large');
-            }
+        // Read at most max+1 bytes. A chunked request has no Content-Length:
+        // reading php://input in one go would let it exhaust memory before the
+        // size check below. The proxy also enforces a body limit.
+        try {
+            $resource = $request->getContent(true);
+        } catch (\LogicException) {
+            $resource = (string) $request->getContent();
+        }
 
+        if (\is_resource($resource)) {
+            $raw = stream_get_contents($resource, $max + 1);
+            if ($raw === false) {
+                throw new BadRequestHttpException('Unable to read request body.');
+            }
+        } else {
+            $raw = (string) $resource;
+        }
+
+        if (\strlen($raw) > $max) {
+            throw new HttpException(413, 'payload_too_large');
+        }
+
+        if (strtolower((string) $request->headers->get('Content-Encoding', '')) === 'gzip') {
             // Bound the decoded size so a compression bomb cannot exhaust memory.
-            $decoded = @gzdecode($raw, $this->limits->maxBodyBytes + 1);
+            $decoded = @gzdecode($raw, $max + 1);
             if ($decoded === false) {
                 throw new BadRequestHttpException('Invalid gzip body.');
             }
             $raw = $decoded;
         }
 
-        if (\strlen($raw) > $this->limits->maxBodyBytes) {
+        if (\strlen($raw) > $max) {
             throw new HttpException(413, 'payload_too_large');
         }
 

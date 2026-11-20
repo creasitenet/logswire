@@ -101,6 +101,16 @@ final class IssueListFilterTest extends WebTestCase
         self::assertCount(0, $issues->findFiltered(null, $projectUuid, null, null, null, null, 'production', '2.0.0', 50, 0));
     }
 
+    public function testInvalidProjectFilterReturnsBadRequest(): void
+    {
+        $client = static::createClient();
+        $this->login($client);
+
+        $client->request('GET', '/issues?project_id=not-a-uuid');
+
+        self::assertResponseStatusCodeSame(400);
+    }
+
     public function testUntilDateFilterIncludesTheWholeDay(): void
     {
         $client = static::createClient();

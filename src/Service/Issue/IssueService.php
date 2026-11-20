@@ -39,10 +39,7 @@ final class IssueService
         ?string $sort = null,
         string $sortDir = 'desc',
     ): array {
-        $projectUuid = null;
-        if ($projectId !== null && $projectId !== '') {
-            $projectUuid = Uuid::fromString($projectId);
-        }
+        $projectUuid = self::projectUuid($projectId);
 
         return $this->issues->findFiltered(
             $status,
@@ -70,10 +67,7 @@ final class IssueService
         ?string $environment = null,
         ?string $release = null,
     ): int {
-        $projectUuid = null;
-        if ($projectId !== null && $projectId !== '') {
-            $projectUuid = Uuid::fromString($projectId);
-        }
+        $projectUuid = self::projectUuid($projectId);
 
         return $this->issues->countFiltered(
             $status,
@@ -95,6 +89,19 @@ final class IssueService
         }
 
         return $issue;
+    }
+
+    private static function projectUuid(?string $projectId): ?Uuid
+    {
+        if ($projectId === null || $projectId === '') {
+            return null;
+        }
+
+        try {
+            return Uuid::fromString($projectId);
+        } catch (\InvalidArgumentException) {
+            throw new BadRequestHttpException('Invalid project filter.');
+        }
     }
 
     public function setStatus(Issue $issue, string $status): Issue

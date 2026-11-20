@@ -109,7 +109,7 @@ final readonly class IssueFilters
         try {
             $date = new \DateTimeImmutable($raw, new \DateTimeZone('UTC'));
         } catch (\Exception) {
-            throw new BadRequestHttpException('Invalid date: '.$raw);
+            throw new BadRequestHttpException('Invalid date filter.');
         }
 
         // Date-only "until" values should include the whole day.

@@ -13,6 +13,27 @@
 	root * /app/public
 	encode zstd gzip
 
+	# Defence in depth: the app also bounds reads in IngestController, but reject
+	# oversized bodies before they reach PHP (chunked requests have no Content-Length).
+	request_body {
+		max_size {$INGEST_MAX_BODY_MB:12}MB
+	}
+
+	# Cheap 404s for the credential/WordPress/Adminer probes that dominate
+	# Internet background noise. This is not a WAF: keep CrowdSec/fail2ban too.
+	@scanner {
+		path */.git/* */.env* */.config/* */.DS_Store */wp-json/* */wp-login.php */xmlrpc.php
+		path */key.json */keyfile.json */firebase-adminsdk.json */firebase-key.json */application_default_credentials.json
+	}
+	handle @scanner {
+		respond 404
+	}
+
+	@adminer query pgsql=*
+	handle @adminer {
+		respond 404
+	}
+
 	php_server {
 		try_files {path} index.php
 	}
@@ -25,6 +46,10 @@
 		X-Content-Type-Options nosniff
 		X-Frame-Options DENY
 		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Cross-Origin-Opener-Policy same-origin
+		Cross-Origin-Resource-Policy same-origin
+		X-Permitted-Cross-Domain-Policies none
 	}
 
 	file_server

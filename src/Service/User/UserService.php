@@ -16,7 +16,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 final class UserService
 {
     /** Minimum length for CLI-created local accounts (no public signup). */
-    public const int MIN_PASSWORD_LENGTH = 8;
+    public const int MIN_PASSWORD_LENGTH = 12;
 
     public function __construct(
         private readonly UserRepository $users,

@@ -59,6 +59,16 @@ final class IssueDetailTest extends WebTestCase
         self::assertSame($issues[0]->getFingerprint(), $reloaded->getFingerprint());
     }
 
+    public function testMalformedIssueIdReturns404(): void
+    {
+        $client = static::createClient();
+        $this->login($client);
+
+        $client->request('GET', '/issues/------------------------------------');
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
     public function testIssueDetailShowsProjectStackAndOccurrences(): void
     {
         $client = static::createClient();

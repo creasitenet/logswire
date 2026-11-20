@@ -31,7 +31,13 @@ final class MonitorService
 
     public function get(string $id): Monitor
     {
-        $monitor = $this->monitors->find($id);
+        try {
+            $uuid = Uuid::fromString($id);
+        } catch (\InvalidArgumentException) {
+            throw new NotFoundHttpException('Monitor not found.');
+        }
+
+        $monitor = $this->monitors->find($uuid->toRfc4122());
         if (!$monitor instanceof Monitor) {
             throw new NotFoundHttpException('Monitor not found.');
         }

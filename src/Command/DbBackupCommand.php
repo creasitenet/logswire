@@ -89,6 +89,9 @@ final class DbBackupCommand extends PostgresToolCommand
             return Command::FAILURE;
         }
 
+        // The dump contains event payloads (possibly PII): owner-only by default.
+        @chmod($destination, 0600);
+
         $io->success(sprintf('Backup written to %s', $destination));
 
         return Command::SUCCESS;

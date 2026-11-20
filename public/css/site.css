@@ -1265,14 +1265,16 @@ textarea.input:focus {
 
 /* ——— Uptime monitors ——— */
 
-.monitor-url {
+.monitor-url,
+.project-slug {
   margin-top: 0.15rem;
   max-width: 32rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.monitor-url code {
+.monitor-url code,
+.project-slug code {
   font-size: 0.78rem;
 }
 

@@ -10,4 +10,10 @@ framework:
             policy: sliding_window
             limit: 300
             interval: '1 minute'
+        # /healthz is public; Docker probes it twice a minute, Internet scanners
+        # should not be able to turn it into a database round-trip amplifier.
+        health_ip:
+            policy: sliding_window
+            limit: 60
+            interval: '1 minute'
 

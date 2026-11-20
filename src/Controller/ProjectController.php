@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Service\Ingest\TestEventService;
+use App\Service\Project\ProjectPresenter;
 use App\Service\Project\ProjectService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -12,17 +13,18 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Uid\Uuid;
 
 #[Route('/dashboard/projects')]
 final class ProjectController extends AbstractController
 {
     use CsrfGuardTrait;
+    use UuidParamTrait;
 
     private const string CSRF_TOKEN = 'project_action';
 
     public function __construct(
         private readonly ProjectService $projects,
+        private readonly ProjectPresenter $presenter,
         private readonly TestEventService $testEvents,
     ) {
     }
@@ -32,7 +34,7 @@ final class ProjectController extends AbstractController
     {
         return $this->render('projects/list.html.twig', [
             'title' => 'Projects — Logswire',
-            'projects' => array_map($this->projects->viewData(...), $this->projects->list()),
+            'projects' => $this->presenter->listRows($this->projects->list()),
         ]);
     }
 
@@ -67,7 +69,7 @@ final class ProjectController extends AbstractController
     #[Route('/{id}', name: 'projects_get', methods: ['GET'])]
     public function get(string $id): Response
     {
-        $project = $this->projects->get(Uuid::fromString($id));
+        $project = $this->projects->get($this->uuidOr404($id));
 
         return $this->render('projects/detail.html.twig', [
             'title' => $project->getName().' — Logswire',
@@ -78,7 +80,7 @@ final class ProjectController extends AbstractController
     #[Route('/{id}/edit', name: 'projects_edit', methods: ['GET', 'POST'])]
     public function edit(string $id, Request $request): Response
     {
-        $project = $this->projects->get(Uuid::fromString($id));
+        $project = $this->projects->get($this->uuidOr404($id));
 
         if ($request->isMethod('POST')) {
             $this->guardCsrf($request, self::CSRF_TOKEN);
@@ -111,7 +113,7 @@ final class ProjectController extends AbstractController
     {
         $this->guardCsrf($request, self::CSRF_TOKEN);
 
-        $project = $this->projects->get(Uuid::fromString($id));
+        $project = $this->projects->get($this->uuidOr404($id));
         $active = $request->request->getBoolean('active');
         $this->projects->setIngestActive($project, $active);
 
@@ -135,7 +137,7 @@ final class ProjectController extends AbstractController
     {
         $this->guardCsrf($request, self::CSRF_TOKEN);
 
-        $project = $this->projects->get(Uuid::fromString($id));
+        $project = $this->projects->get($this->uuidOr404($id));
         $this->projects->delete($project);
 
         $this->addFlash('success', sprintf('Project "%s" deleted.', $project->getName()));
@@ -148,7 +150,7 @@ final class ProjectController extends AbstractController
     {
         $this->guardCsrf($request, self::CSRF_TOKEN);
 
-        $project = $this->projects->get(Uuid::fromString($id));
+        $project = $this->projects->get($this->uuidOr404($id));
         $this->projects->regenerateDsn($project);
 
         $this->addFlash('success', 'DSN regenerated. Update your SDK to use the new key.');
@@ -161,7 +163,7 @@ final class ProjectController extends AbstractController
     {
         $this->guardCsrf($request, self::CSRF_TOKEN);
 
-        $project = $this->projects->get(Uuid::fromString($id));
+        $project = $this->projects->get($this->uuidOr404($id));
 
         if (!$project->isActive()) {
             $this->addFlash('error', 'This project is inactive. Activate it before sending a test event.');

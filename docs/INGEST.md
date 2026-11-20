@@ -66,6 +66,23 @@ An envelope with no `event` (e.g. only `client_report`) → **202** with `events
 | `LOGSWIRE_INGEST_MAX_BODY_BYTES` | 10485760 (10 MiB) |
 | `LOGSWIRE_INGEST_MAX_ITEMS` | 50 |
 | `LOGSWIRE_INGEST_MAX_ITEM_BYTES` | 1048576 (1 MiB) |
+| `LOGSWIRE_SCRUB_SENSITIVE` | `1` (enabled) |
+| `INGEST_MAX_BODY_MB` | 12 (bundled Caddyfile only) |
+
+## Sensitive data
+
+Before the raw payload is stored, `PayloadScrubber` replaces values whose key
+looks like a credential (`password`, `token`, `secret`, `authorization`,
+`cookie`, `api_key`, `private_key`, `credit_card`, `ssn`, …) with
+`[Filtered]`. This covers both `request.headers` objects and SDK variants that
+send header pairs. The mapped columns used by the UI (message, stacktrace,
+request URL, tags…) come from the original event and keep their debugging value.
+
+Set `LOGSWIRE_SCRUB_SENSITIVE=0` only if you really need untouched payloads.
+The proxy should also enforce a body limit: the bundled Caddyfile reads
+`INGEST_MAX_BODY_MB` (default 12), which must stay **at or above**
+`LOGSWIRE_INGEST_MAX_BODY_BYTES / 1 MiB`. The controller bounds reads as a
+second line of defence.
 
 ## Tests
 

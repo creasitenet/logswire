@@ -18,6 +18,32 @@ undisclosed vulnerability.
 | PostgreSQL data (volume + dumps) | Host / container | Full data dump |
 | Telegram token (env) | Instance admin | Can send messages to your chat |
 
+## Production checklist
+
+Run through this list before exposing an instance:
+
+- [ ] `APP_SECRET` is a random 32+ character value. The app refuses to boot in
+      `APP_ENV=prod` while the `.env.example` placeholder is still present.
+- [ ] `POSTGRES_PASSWORD` is set and strong; `docker compose` refuses to start
+      while it is empty.
+- [ ] The app port is bound to `127.0.0.1` (the Compose default) and TLS is
+      terminated by a proxy. Do not publish `8080` on `0.0.0.0`.
+- [ ] `TRUSTED_PROXIES` is set to the proxy IP/CIDR, so client IPs, `Secure`
+      cookies, HSTS and rate limits behave correctly.
+- [ ] No database admin UI (Adminer, phpPgAdmin, pgAdmin) is exposed on the
+      same host or Docker network. These tools accept SQL through query
+      parameters and are a constant target for scanners.
+- [ ] PostgreSQL access is scoped to the minimum needed. The bundled Compose
+      file uses the database owner for simplicity; for a hardened deployment,
+      run migrations out-of-band with an owner role and point the runtime
+      `DATABASE_URL` at a DML-only role (the entrypoint currently migrates on
+      boot, so this needs a small deployment adjustment).
+- [ ] Backups are encrypted or stored on encrypted media; `app:db:backup` writes
+      mode `0600` dumps, but they are plain SQL.
+- [ ] `composer audit --no-dev` is clean, and images/actions are updated.
+- [ ] Proxy request-body limits are enabled (the bundled Caddyfile uses
+      `INGEST_MAX_BODY_MB`, default 12) and `/healthz` is not exposed broadly.
+
 ## Default model: one hostname, Symfony auth on the UI
 
 | Route | Auth | Content |
@@ -40,6 +66,9 @@ Mitigations:
 - Avoid exposing the DSN in public client bundles when errors can be sent server-side only.
 - Rate limit: `api_write` sliding window (see `config/packages/rate_limiter.yaml`).
 - Payload limits: `LOGSWIRE_INGEST_*` → **413** when exceeded ([`docs/INGEST.md`](docs/INGEST.md)).
+- Payload scrubbing: `LOGSWIRE_SCRUB_SENSITIVE=1` (default) replaces
+  password/token/cookie/authorization values with `[Filtered]` before the raw
+  payload is stored. Mapped columns (message, stacktrace, URL…) are unaffected.
 
 ## CSP & frontend scripts
 
@@ -49,13 +78,22 @@ Mitigations:
 
 - Terminate TLS at the proxy; keep `APP_PUBLIC_URL` on `https://…` so generated DSNs match reality.
 - Set `TRUSTED_PROXIES` so Symfony honors `X-Forwarded-Proto` / `Host` from **one** trusted hop only.
+- Keep the app port bound to loopback. Publishing `8080` on `0.0.0.0` lets
+  clients bypass the proxy, its ACLs and its TLS termination.
+- Set the proxy body limit too (`request_body { max_size {$INGEST_MAX_BODY_MB:12}MB }`
+  in the bundled Caddyfile). `IngestController` also bounds reads, but rejecting
+  early avoids wasting PHP workers.
+- HSTS is emitted when `APP_PUBLIC_URL` starts with `https://`, even if the
+  request reaches PHP over plain HTTP behind the proxy.
 
 See [`README.md`](README.md) for a Caddy example.
 
 ## Local accounts (no web signup)
 
 - First admin: `docker compose exec logswire bin/console app:owner:create <user> --password='…' --admin`
-- Password reset: CLI only (`app:user:password`). Minimum 8 characters.
+- Password reset: CLI only (`app:user:password`). Minimum 12 characters.
+- A password reset invalidates existing sessions (the session token is
+  considered stale when the stored hash changes).
 
 ## NPM Access List trap
 

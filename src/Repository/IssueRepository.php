@@ -163,4 +163,43 @@ final class IssueRepository extends ServiceEntityRepository
         return $this->findOneBy(['id' => $id->toRfc4122()]);
     }
 
+    /**
+     * @param list<string> $projectIds
+     *
+     * @return array<string, array{open: int, last_seen_at: ?string}>
+     */
+    public function unresolvedStatsForProjects(array $projectIds): array
+    {
+        if ($projectIds === []) {
+            return [];
+        }
+
+        /** @var list<array{project_id: string, open_count: int|string, last_seen_at: mixed}> $rows */
+        $rows = $this->createQueryBuilder('i')
+            ->select('p.id AS project_id')
+            ->addSelect('COUNT(i.id) AS open_count')
+            ->addSelect('MAX(i.lastSeenAt) AS last_seen_at')
+            ->innerJoin('i.project', 'p')
+            ->andWhere('i.status = :status')
+            ->andWhere('p.id IN (:projectIds)')
+            ->groupBy('p.id')
+            ->setParameter('status', Issue::STATUS_UNRESOLVED)
+            ->setParameter('projectIds', $projectIds)
+            ->getQuery()
+            ->getArrayResult();
+
+        $stats = [];
+        foreach ($rows as $row) {
+            $lastSeen = $row['last_seen_at'];
+            $stats[$row['project_id']] = [
+                'open' => (int) $row['open_count'],
+                'last_seen_at' => $lastSeen instanceof \DateTimeInterface
+                    ? $lastSeen->format(\DateTimeInterface::ATOM)
+                    : null,
+            ];
+        }
+
+        return $stats;
+    }
+
 }

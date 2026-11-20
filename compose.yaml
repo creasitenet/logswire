@@ -17,7 +17,8 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-logswire}
       POSTGRES_USER: ${POSTGRES_USER:-logswire}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-logswire}
+      # Required: set a strong value in .env before the first `docker compose up`.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
     volumes:
       - logswire-pgdata:/var/lib/postgresql/data
     ports:
@@ -52,16 +53,18 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      # Case 1 (default): publish on the host — fine for a single stack / local try-out.
-      # Case 2 (NPM on shared Docker network): uncomment `proxy-tier` below, point NPM at
-      # `http://logswire:8080`, then remove or narrow this mapping (e.g. 127.0.0.1:8080).
-      - "${APP_HTTP_PORT:-8080}:8080"
+      # Loopback only: the app must not be reachable directly from the Internet.
+      # Put a TLS proxy in front (see README), or publish a different bind address
+      # explicitly if you really need direct LAN access.
+      # Case 2 (NPM on shared Docker network): uncomment `proxy-tier` below and point
+      # NPM at `http://logswire:8080`; the host mapping can then be removed entirely.
+      - "127.0.0.1:${APP_HTTP_PORT:-8080}:8080"
     env_file:
       - .env
     environment:
       APP_ENV: ${APP_ENV:-prod}
       APP_DEBUG: ${APP_DEBUG:-0}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-logswire}:${POSTGRES_PASSWORD:-logswire}@postgres:5432/${POSTGRES_DB:-logswire}?serverVersion=16&charset=utf8
+      DATABASE_URL: postgresql://${POSTGRES_USER:-logswire}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-logswire}?serverVersion=16&charset=utf8
       RETENTION_STATE_FILE: /data/.retention_last_run
       LOCK_DSN: flock:///data/locks
     volumes:
@@ -106,7 +109,7 @@ services:
       APP_ENV: ${APP_ENV:-prod}
       APP_DEBUG: ${APP_DEBUG:-0}
       LOGSWIRE_ROLE: probe
-      DATABASE_URL: postgresql://${POSTGRES_USER:-logswire}:${POSTGRES_PASSWORD:-logswire}@postgres:5432/${POSTGRES_DB:-logswire}?serverVersion=16&charset=utf8
+      DATABASE_URL: postgresql://${POSTGRES_USER:-logswire}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-logswire}?serverVersion=16&charset=utf8
       RETENTION_STATE_FILE: /data/.retention_last_run
       LOCK_DSN: flock:///data/locks
     volumes:
@@ -160,7 +163,7 @@ services:
       APP_ENV: ${APP_ENV:-prod}
       APP_DEBUG: ${APP_DEBUG:-0}
       LOGSWIRE_ROLE: worker
-      DATABASE_URL: postgresql://${POSTGRES_USER:-logswire}:${POSTGRES_PASSWORD:-logswire}@postgres:5432/${POSTGRES_DB:-logswire}?serverVersion=16&charset=utf8
+      DATABASE_URL: postgresql://${POSTGRES_USER:-logswire}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-logswire}?serverVersion=16&charset=utf8
       RETENTION_STATE_FILE: /data/.retention_last_run
       LOCK_DSN: flock:///data/locks
     volumes:

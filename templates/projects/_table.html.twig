@@ -1,0 +1,61 @@
+{% import 'macros/empty_state.html.twig' as empty %}
+{% if projects is empty %}
+    {{ empty.block(
+        'No projects yet',
+        'One project per application. Point your Sentry-compatible SDK at the DSN to start receiving issues.',
+        'New project',
+        path('projects_new'),
+        'default',
+        false,
+        false,
+        'project'
+    ) }}
+{% else %}
+    <div class="table-wrap">
+    <table class="project-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Open</th>
+                <th>Last issue</th>
+                <th>Active</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in projects %}
+                <tr>
+                    <td>
+                        <a href="{{ path('projects_get', {id: project.id}) }}">{{ project.name }}</a>
+                        <div class="muted small project-slug"><code>/{{ project.slug }}</code></div>
+                    </td>
+                    <td>
+                        {% if project.active %}
+                            <span class="badge ok">Receiving</span>
+                        {% else %}
+                            <span class="badge down" title="New events are rejected until ingest is turned back on">Paused</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if project.issues_open > 0 %}
+                            <a href="{{ path('issues_list', {project_id: project.id, status: 'unresolved'}) }}">{{ project.issues_open }}</a>
+                        {% else %}
+                            <span class="muted">0</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if project.last_issue_at %}
+                            {% include '_time_utc.html.twig' with {at: project.last_issue_at} only %}
+                        {% else %}
+                            <span class="muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="project-ingest-cell">
+                        {% include 'projects/_ingest_switch.html.twig' with {project: project, compact: true} only %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+{% endif %}
