@@ -19,7 +19,7 @@
     <link rel="preload" href="{{ asset('fonts/jetbrains-mono.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{ asset('css/site.css') }}?v=20261120a">
     <script src="{{ asset('js/htmx.min.js') }}?v=2.0.4" defer></script>
-    <script src="{{ asset('js/logswire.js') }}?v=20261120a" defer></script>
+    <script src="{{ asset('js/logswire.js') }}?v=20261120b" defer></script>
     {% block head %}{% endblock %}
 </head>
 {% set current_route = app.request.attributes.get('_route') %}
@@ -75,14 +75,14 @@
     </main>
 {% endif %}
 <dialog id="confirm-dialog" class="modal" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message">
-    <form method="dialog" class="modal-card">
+    <div class="modal-card">
         <h2 id="confirm-dialog-title" class="modal-title">Confirm action</h2>
         <p id="confirm-dialog-message" class="modal-message"></p>
         <div class="modal-actions">
-            <button type="submit" value="cancel" class="btn" autofocus>Cancel</button>
-            <button type="submit" value="confirm" class="btn btn-danger" data-confirm-accept>Confirm</button>
+            <button type="button" class="btn" data-confirm-cancel autofocus>Cancel</button>
+            <button type="button" class="btn btn-danger" data-confirm-accept>Confirm</button>
         </div>
-    </form>
+    </div>
 </dialog>
 </body>
 </html>

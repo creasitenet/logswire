@@ -29,28 +29,48 @@
       accept.textContent = trigger.getAttribute('data-confirm-ok') || 'Confirm';
     }
 
-    dialog.returnValue = '';
     dialog.showModal();
   }
 
+  function settle(action) {
+    if (!dialog) {
+      return;
+    }
+
+    var run = pendingAction;
+    var trigger = lastTrigger;
+    pendingAction = null;
+    lastTrigger = null;
+
+    dialog.close(action);
+
+    if ('confirm' === action && run) {
+      run();
+    } else if (trigger && typeof trigger.focus === 'function') {
+      trigger.focus();
+    }
+  }
+
   if (dialog) {
-    dialog.addEventListener('close', function () {
-      var run = pendingAction;
-      var trigger = lastTrigger;
-      pendingAction = null;
-      lastTrigger = null;
+    var accept = dialog.querySelector('[data-confirm-accept]');
+    var cancel = dialog.querySelector('[data-confirm-cancel]');
 
-      if (dialog.returnValue === 'confirm' && run) {
-        run();
-      } else if (trigger && typeof trigger.focus === 'function') {
-        trigger.focus();
-      }
+    if (accept) {
+      accept.addEventListener('click', function () { settle('confirm'); });
+    }
+    if (cancel) {
+      cancel.addEventListener('click', function () { settle('cancel'); });
+    }
+
+    // ESC and backdrop both cancel. Do not rely on the <dialog> close event:
+    // some environments do not dispatch it, which would silently drop the action.
+    dialog.addEventListener('cancel', function (event) {
+      event.preventDefault();
+      settle('cancel');
     });
-
-    // Clicking the backdrop cancels; clicks inside .modal-card bubble here too.
     dialog.addEventListener('click', function (event) {
       if (event.target === dialog) {
-        dialog.close('cancel');
+        settle('cancel');
       }
     });
   }
