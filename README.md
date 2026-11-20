@@ -174,12 +174,18 @@ logswire.example.com {
 ```
 
 **Case 2 — NPM (or similar) in Docker on a shared network** (several stacks on one
-machine): in `compose.yaml`, uncomment `proxy-tier` under `networks:` and on
-service `logswire`, then recreate the stack. In NPM set Forward Hostname to
-`logswire`, port `8080` (not the host-mapped port). You can remove the loopback
-`ports:` mapping entirely in this case. The external network name (`proxy-tier`,
-`web`, …) is yours — adjust `name:` in the compose comment. Postgres and `probe`
-stay on `logswire-net` only.
+machine): copy the proxy override and recreate the stack:
+
+```bash
+cp compose.override.yaml.example compose.override.yaml
+docker compose up -d
+```
+
+The override attaches `logswire` to the external `proxy-tier` network. In NPM set
+Forward Hostname to `logswire`, port `8080` (not the loopback host-mapped port).
+Keep the override in place: it is gitignored, so `git pull` cannot silently drop
+the proxy wiring. The external network name (`proxy-tier`, `web`, …) is yours —
+adjust it in the override. Postgres and `probe` stay on `logswire-net` only.
 
 Once the proxy is in front, set `TRUSTED_PROXIES` to its IP/CIDR. Without it,
 Symfony sees the proxy as the client: rate limits are shared by every visitor,
@@ -301,6 +307,15 @@ docker compose up -d --build
 ```
 
 This rebuilds the **logswire**, **probe** and **worker** images (same Dockerfile, different `LOGSWIRE_ROLE` / command). Postgres keeps its data in the `logswire-pgdata` volume. After a UI-heavy release, refresh [`docs/screenshots/`](docs/screenshots/) if the README hero looks stale (see [`CONTRIBUTING.md`](CONTRIBUTING.md)).
+
+> **Already deployed under another project name?** `compose.yaml` sets
+> `name: logswire`, and Compose prefixes the volumes with the project name. A
+> stack created before that `name:` (or from a differently named directory) lives
+> in e.g. `logswireoss_logswire-pgdata`. Running the new compose without pinning
+> the old name would create **new, empty** volumes. Before upgrading, compare
+> `docker compose ls` with `docker volume ls` and pin the existing name in
+> `compose.override.yaml` (`name: <old-project>`) or with `COMPOSE_PROJECT_NAME`.
+> The same applies to `container_name`: keep the value your reverse proxy targets.
 
 ## Roadmap
 

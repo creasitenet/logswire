@@ -17,12 +17,14 @@
         </div>
         <div class="page-header-actions">
             <a class="btn" href="{{ path('monitors_edit', {id: monitor.id}) }}">Edit</a>
-            <form method="post" action="{{ path('monitors_delete', {id: monitor.id}) }}" class="inline-form">
+            <form method="post"
+                  action="{{ path('monitors_delete', {id: monitor.id}) }}"
+                  class="inline-form"
+                  data-confirm="Delete monitor {{ monitor.name }}? Its incidents and history will be lost."
+                  data-confirm-title="Delete monitor"
+                  data-confirm-ok="Delete">
                 {{ csrf.input('monitor_action') }}
-                <button type="submit" class="btn btn-danger"
-                        data-confirm="Delete monitor {{ monitor.name|e('js') }}? Its incidents and history will be lost.">
-                    Delete
-                </button>
+                <button type="submit" class="btn btn-danger">Delete</button>
             </form>
         </div>
     </header>

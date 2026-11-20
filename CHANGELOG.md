@@ -63,6 +63,12 @@ only alert channel.
   `IssueFilters` DTO.
 - Fonts are self-hosted and the CSP no longer needs `'unsafe-inline'`; inline
   handlers were replaced by delegated `data-confirm` / `data-autosubmit`.
+- Destructive actions (delete monitor, delete project, rotate DSN) use a shared
+  native `<dialog>` instead of `window.confirm()`; a unit test forbids inline
+  handlers and native dialogs in templates.
+- `compose.override.yaml.example` documents the reverse-proxy setup, and the
+  README warns that `name:` prefixes the volumes (pin it before upgrading an
+  existing stack).
 - Ingest clips oversized event fields to column limits (no failed insert on long SDK
   strings).
 - Filters and toggles work without JavaScript (`noscript` fallbacks).
@@ -86,6 +92,9 @@ only alert channel.
   (the one whose full payload is kept) is always displayed — previously a tie on
   `received_at` could show a trimmed occurrence and "No stacktrace on the latest
   occurrence".
+- The bundled Caddyfile sets `persist_config off`, so Caddy no longer logs
+  `unable to autosave config ... permission denied` on every start (the container
+  runs as `www-data` and nothing reloads the config at runtime).
 
 ### Security
 

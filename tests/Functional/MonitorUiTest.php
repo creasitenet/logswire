@@ -58,6 +58,9 @@ final class MonitorUiTest extends WebTestCase
         self::assertStringContainsString('api-prod', $body);
         self::assertStringContainsString('Uptime 24 h', $body);
         self::assertStringContainsString('Daily rollup', $body);
+        self::assertStringContainsString('id="confirm-dialog"', $body);
+        self::assertStringContainsString('data-confirm-title="Delete monitor"', $body);
+        self::assertStringNotContainsString('window.confirm', $body);
     }
 
     public function testListFragmentRefreshesWithoutLayout(): void

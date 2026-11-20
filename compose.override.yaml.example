@@ -1,0 +1,34 @@
+# Copy to `compose.override.yaml` (gitignored) when a reverse proxy on a shared
+# Docker network (Nginx Proxy Manager, Traefik, …) fronts Logswire:
+#
+#   cp compose.override.yaml.example compose.override.yaml
+#   docker network create proxy-tier   # once, if it does not exist yet
+#   docker compose up -d
+#
+# Then point the proxy at `http://logswire:8080` (not the loopback host port).
+#
+# Notes:
+#
+# - `compose.yaml` sets `name: logswire`, which prefixes the Postgres and runtime
+#   volumes (`logswire_logswire-pgdata`, …). If you already deployed under another
+#   project name (the directory name, or an older `name:`), pin `name:` below to
+#   that old value — otherwise Compose creates *new empty* volumes. Check
+#   `docker compose ls` and `docker volume ls` first.
+# - `container_name` is `logswire` in the public compose. Override it only if your
+#   existing proxy configuration points at a different hostname.
+# - The loopback `ports:` mapping stays (127.0.0.1:8080). It is harmless when the
+#   proxy reaches the container over `proxy-tier`, and useful for a host-side
+#   `curl`.
+
+name: logswire
+
+services:
+  logswire:
+    container_name: logswire
+    networks:
+      - logswire-net
+      - proxy-tier
+
+networks:
+  proxy-tier:
+    external: true

@@ -1,12 +1,91 @@
 (function () {
-  document.addEventListener('click', function (event) {
-    var trigger = event.target.closest('[data-confirm]');
-    if (!trigger) {
+  // ——— Confirmation modal ———
+  // Forms opt in with data-confirm on the <form>, links with data-confirm on the
+  // <a>. Native <dialog> keeps it accessible and CSP-safe (no inline JS).
+
+  var dialog = document.getElementById('confirm-dialog');
+  var pendingAction = null;
+  var lastTrigger = null;
+
+  function confirmAction(trigger, run) {
+    if (!dialog || typeof dialog.showModal !== 'function' || dialog.open) {
       return;
     }
-    if (!window.confirm(trigger.getAttribute('data-confirm') || 'Are you sure?')) {
-      event.preventDefault();
+
+    pendingAction = run;
+    lastTrigger = trigger;
+
+    var title = dialog.querySelector('#confirm-dialog-title');
+    var message = dialog.querySelector('#confirm-dialog-message');
+    var accept = dialog.querySelector('[data-confirm-accept]');
+
+    if (title) {
+      title.textContent = trigger.getAttribute('data-confirm-title') || 'Confirm action';
     }
+    if (message) {
+      message.textContent = trigger.getAttribute('data-confirm') || 'Are you sure?';
+    }
+    if (accept) {
+      accept.textContent = trigger.getAttribute('data-confirm-ok') || 'Confirm';
+    }
+
+    dialog.returnValue = '';
+    dialog.showModal();
+  }
+
+  if (dialog) {
+    dialog.addEventListener('close', function () {
+      var run = pendingAction;
+      var trigger = lastTrigger;
+      pendingAction = null;
+      lastTrigger = null;
+
+      if (dialog.returnValue === 'confirm' && run) {
+        run();
+      } else if (trigger && typeof trigger.focus === 'function') {
+        trigger.focus();
+      }
+    });
+
+    // Clicking the backdrop cancels; clicks inside .modal-card bubble here too.
+    dialog.addEventListener('click', function (event) {
+      if (event.target === dialog) {
+        dialog.close('cancel');
+      }
+    });
+  }
+
+  // Capture phase: stops the submission before HTMX or any other listener sees it.
+  document.addEventListener('submit', function (event) {
+    var form = event.target;
+    if (!form.matches || !form.matches('form[data-confirm]')) {
+      return;
+    }
+    if (form.dataset.confirmed === '1') {
+      delete form.dataset.confirmed;
+      return;
+    }
+    event.preventDefault();
+    confirmAction(form, function () {
+      form.dataset.confirmed = '1';
+      if (typeof form.requestSubmit === 'function') {
+        form.requestSubmit();
+      } else {
+        form.submit();
+      }
+    });
+  }, true);
+
+  document.addEventListener('click', function (event) {
+    var link = event.target.closest ? event.target.closest('a[data-confirm]') : null;
+    if (!link || link.dataset.confirmed === '1') {
+      return;
+    }
+    event.preventDefault();
+    confirmAction(link, function () {
+      link.dataset.confirmed = '1';
+      window.location.assign(link.href);
+    });
   });
 
   document.addEventListener('change', function (event) {

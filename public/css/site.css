@@ -582,6 +582,48 @@ textarea.input:focus {
 
 .inline-form { display: inline; }
 
+/* ——— Confirmation modal ——— */
+
+.modal {
+  padding: 0;
+  width: min(26rem, calc(100vw - 2rem));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: var(--shadow-panel);
+}
+
+.modal::backdrop {
+  background: rgba(3, 7, 12, 0.68);
+}
+
+.modal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem 1.35rem 1.15rem;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.modal-message {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
 /* ——— Flashes & badges ——— */
 
 .flash {

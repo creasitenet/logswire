@@ -1,5 +1,9 @@
 {
 	{$CADDY_GLOBAL_OPTIONS}
+	# The container runs as www-data and /config is not writable: without this,
+	# Caddy logs "unable to autosave config" on every start. Nothing reloads the
+	# config at runtime, so persistence is not needed.
+	persist_config off
 	frankenphp {
 		{$FRANKENPHP_CONFIG}
 	}

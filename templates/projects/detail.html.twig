@@ -24,12 +24,14 @@
         </div>
         <div class="page-header-actions">
             <a class="btn" href="{{ path('projects_edit', {id: project.id}) }}">Edit</a>
-            <form method="post" action="{{ path('projects_delete', {id: project.id}) }}" class="inline-form">
+            <form method="post"
+                  action="{{ path('projects_delete', {id: project.id}) }}"
+                  class="inline-form"
+                  data-confirm="Delete project {{ project.name }}? All its issues will be lost."
+                  data-confirm-title="Delete project"
+                  data-confirm-ok="Delete">
                 {{ csrf.input('project_action') }}
-                <button type="submit" class="btn btn-danger"
-                        data-confirm="Delete project {{ project.name|e('js') }}? All its issues will be lost.">
-                    Delete
-                </button>
+                <button type="submit" class="btn btn-danger">Delete</button>
             </form>
         </div>
     </header>
@@ -56,12 +58,14 @@
 
         <h3>Rotate DSN key</h3>
         <p class="muted">Regenerate the public key. The old key stops accepting events immediately.</p>
-        <form method="post" action="{{ path('projects_regenerate_dsn', {id: project.id}) }}" class="inline-form">
+        <form method="post"
+              action="{{ path('projects_regenerate_dsn', {id: project.id}) }}"
+              class="inline-form"
+              data-confirm="Rotate the DSN? All running applications will need to be updated."
+              data-confirm-title="Rotate DSN key"
+              data-confirm-ok="Rotate">
             {{ csrf.input('project_action') }}
-            <button type="submit" class="btn"
-                    data-confirm="Rotate DSN? All running applications will need to be updated.">
-                Regenerate DSN
-            </button>
+            <button type="submit" class="btn">Regenerate DSN</button>
         </form>
 
         <h3>Send a test event</h3>
